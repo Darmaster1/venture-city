@@ -248,7 +248,7 @@ export async function settleTick(tick: number, by: string): Promise<{ log: StepL
         update: { settledAt: new Date(), settledBy: by }
       });
       await tx.run.updateMany({ data: { currentTick: tick, clockState: "RUNNING" } });
-    });
+    }, { maxWait: 15000, timeout: 55000 });
 
     await snapshot(tick, "post", by); log.push(`snapshot post tick ${tick}`);
   } finally {
