@@ -1,9 +1,23 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Navbar, Footer } from "@/src/components/chrome";
 
 export default function LoginPage() {
-  const [qr, setQr] = useState("");
+  return (
+    <div>
+      <Navbar />
+      <Suspense>
+        <Forms />
+      </Suspense>
+      <Footer />
+    </div>
+  );
+}
+
+function Forms() {
+  const pre = useSearchParams().get("qr") ?? "";
+  const [qr, setQr] = useState(pre);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   async function login(e: React.FormEvent) {
@@ -18,9 +32,7 @@ export default function LoginPage() {
     } finally { setBusy(false); }
   }
   return (
-    <div>
-      <Navbar />
-      <div className="wrap" style={{ maxWidth: 520 }}>
+    <div className="wrap" style={{ maxWidth: 520 }}>
         <div className="hero" style={{ padding: "36px 32px" }}>
           <h1 style={{ fontSize: 36 }}>Your badge is your ticket.</h1>
           <p>Paste the code from your badge QR. Volunteers, use your desk account below.</p>
@@ -39,8 +51,6 @@ export default function LoginPage() {
           <Volunteer />
         </div>
       </div>
-      <Footer />
-    </div>
   );
 }
 

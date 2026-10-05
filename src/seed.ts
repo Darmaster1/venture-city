@@ -79,13 +79,15 @@ export async function seed() {
     for (let k = 1; k <= 6; k++)
       await prisma.contractLine.create({ data: { contractId: cc.id, tick: k, unitsDue: c.anchor.units, paymentDue: c.anchor.units * c.anchor.rate } });
   }
-  // Participants: 8 per company
+  // Participants: 8 per company (+ employment so salaries + seats work)
   let badge = 100;
   for (const c of companies) {
     for (let i = 0; i < 8; i++) {
       const id = `${c.id}-P${i + 1}`;
       try {
-        await prisma.participant.create({ data: { id, name: `${c.name} Staff ${i + 1}`, badgeNo: String(badge++), companyId: c.id, domain: i === 0 ? c.deficit : "Operations", level: 0, salary: 100, qrToken: newQrToken(), capabilityTags: [], createdBy: "seed" } });
+        const domain = i === 0 ? c.deficit : "Operations";
+        const pt = await prisma.participant.create({ data: { id, name: `${c.name} Staff ${i + 1}`, badgeNo: String(badge++), companyId: c.id, domain, level: 0, salary: 100, qrToken: newQrToken(), capabilityTags: [], createdBy: "seed" } });
+        await prisma.employment.create({ data: { participantId: pt.id, companyId: c.id, role: "staff", domain, level: 0, salary: 100, state: "ACTIVE", startTick: 0 } });
       } catch {}
     }
   }

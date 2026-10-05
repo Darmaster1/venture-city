@@ -46,12 +46,72 @@ export default function GMPage() {
             <EntryForm />
           </div>
         </div>
+        <div className="grid-2">
+          <div className="card" style={{ borderTop: "5px solid #2F855A" }}>
+            <div className="label">Crew · new volunteer login</div>
+            <VolunteerForm />
+          </div>
+          <div className="card" style={{ borderTop: "5px solid #E8930C" }}>
+            <div className="label">Late registration · new participant</div>
+            <ParticipantForm />
+          </div>
+        </div>
       </div>
       <Footer />
     </div>
   );
 }
 
+function VolunteerForm() {
+  const [f, setF] = useState({ name: "", role: "DESK", deskOrCompany: "BANK" });
+  const [out, setOut] = useState("");
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await fetch("/api/gm/volunteers", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
+    const j = await r.json();
+    setOut(r.ok ? `ID: ${j.id} — secret (copy now, shown once): ${j.secret}` : (j.error ?? "Failed."));
+    if (r.ok) setF({ name: "", role: "DESK", deskOrCompany: "BANK" });
+  }
+  return (
+    <form onSubmit={submit}>
+      <label className="f">Name</label><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="e.g. Priya Nair" />
+      <label className="f">Role</label>
+      <select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })}>
+        {["DESK", "GM", "DEPUTY_GM", "TECH_LEAD", "LEDGER_LEAD", "OBSERVER", "MC", "RUNNER", "REGISTRATION"].map((r) => <option key={r}>{r}</option>)}
+      </select>
+      <label className="f">Desk / company (for DESK)</label>
+      <select value={f.deskOrCompany} onChange={(e) => setF({ ...f, deskOrCompany: e.target.value })}>
+        {["BANK", "INVESTOR", "CUSTOMER", "TALENT", "SUPPLIER", "LOGISTICS", "GOVERNMENT", "MEDIA", "SWC", "LED", "MAN", "SKF", "PAI", "GRG", "MED", "STH", "VLT", "TRL"].map((d) => <option key={d}>{d}</option>)}
+      </select>
+      <div style={{ marginTop: 12 }}><button className="btn btn-primary" type="submit" style={{ width: "100%", height: 44 }}>Create login</button></div>
+      <p className="mono" style={{ wordBreak: "break-all" }}>{out}</p>
+    </form>
+  );
+}
+
+function ParticipantForm() {
+  const [f, setF] = useState({ name: "", companyId: "SWC", domain: "Operations" });
+  const [out, setOut] = useState("");
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await fetch("/api/gm/participants", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
+    const j = await r.json();
+    setOut(r.ok ? `Badge ${j.badgeNo} — login: ${j.loginUrl}` : (j.error ?? "Failed."));
+    if (r.ok) setF({ name: "", companyId: "SWC", domain: "Operations" });
+  }
+  return (
+    <form onSubmit={submit}>
+      <label className="f">Name</label><input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="e.g. Arjun Rao" />
+      <label className="f">Company</label>
+      <select value={f.companyId} onChange={(e) => setF({ ...f, companyId: e.target.value })}>
+        {["SWC", "LED", "MAN", "SKF", "PAI", "GRG", "MED", "STH", "VLT", "TRL"].map((c) => <option key={c}>{c}</option>)}
+      </select>
+      <label className="f">Domain</label><input value={f.domain} onChange={(e) => setF({ ...f, domain: e.target.value })} />
+      <div style={{ marginTop: 12 }}><button className="btn btn-primary" type="submit" style={{ width: "100%", height: 44 }}>Register + print badge</button></div>
+      <p className="mono" style={{ wordBreak: "break-all" }}>{out}</p>
+    </form>
+  );
+}
 function EntryForm() {
   const [f, setF] = useState({ toAccountId: "", asset: "VB", amount: "", reason: "", idempotencyKey: "" });
   const [msg, setMsg] = useState("");
