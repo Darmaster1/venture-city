@@ -151,4 +151,8 @@ details.menu .drop a:hover, details.menu .drop button:hover { background: #F1EDF
   .nav-links { margin-left: 0; overflow-x: auto; max-width: 52vw; flex-wrap: nowrap; scrollbar-width: none; }
   .nav-links::-webkit-scrollbar { display: none; }
   .nav-inner { gap: 12px; }
+  .nav-menu .drop { position: fixed; top: 66px; left: 12px; right: 12px; min-width: 0; max-height: 62vh; overflow-y: auto; }
+  .card { overflow-x: auto; }
+  .wrap { padding: 20px 14px 44px; }
+  .stat .value { font-size: 25px; }
 }
