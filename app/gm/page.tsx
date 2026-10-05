@@ -36,17 +36,15 @@ export default function GMPage() {
           <p>Settle ticks, freeze the market, post manual entries. Every action is journaled.</p>
           <div className="hero-cta">
             <button className="btn btn-danger" onClick={settle} disabled={busy} style={{ height: 48, padding: "0 28px", fontSize: 16 }}>{busy ? "Settling." : "Settle tick"}</button>
-            <details className="menu">
-              <summary className="btn btn-light">More actions ▾</summary>
-              <div className="drop">
-                <button onClick={() => freeze(true)}>Freeze the city</button>
-                <button onClick={() => freeze(false)}>Resume</button>
-                <a href="/api/paper-export?tick=0">Paper export</a>
-                <a href="/api/gm/badges">Badges</a>
-                <button onClick={backup}>Backup journal</button>
-              </div>
-            </details>
           </div>
+        </div>
+        <div className="card" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <span className="label">City controls</span>
+          <button className="btn" onClick={() => freeze(true)}>Freeze the city</button>
+          <button className="btn" onClick={() => freeze(false)}>Resume</button>
+          <a className="btn" href="/api/paper-export?tick=0">Paper export</a>
+          <a className="btn" href="/api/gm/badges">Badges</a>
+          <button className="btn" onClick={backup}>Backup journal</button>
         </div>
         <p aria-live="polite"><b>{msg}</b></p>
         <div className="grid-2">
