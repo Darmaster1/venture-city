@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["bom1"],
+  "functions": {
+    "app/api/gm/settle/route.ts": { "maxDuration": 60, "memory": 1024 },
+    "app/api/paper-export/route.ts": { "maxDuration": 30, "memory": 512 }
+  },
+  "crons": [{ "path": "/api/health", "schedule": "0 3 * * *" }]
+}

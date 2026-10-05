@@ -1,0 +1,687 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Run {
+  id           String    @id @default(cuid())
+  date         DateTime
+  rulesVersion String    @default("1.0.0")
+  contentVersion String  @default("1.0.0")
+  appVersion   String    @default("1.0.0")
+  activeSet    String    @default("CITY10")
+  N            Int       @default(10)
+  P            Int       @default(80)
+  leadThesis   String?
+  rumourE20True Boolean  @default(false)
+  infoMode     String    @default("CLOSED")
+  currentTick  Int       @default(0)
+  clockState   String    @default("PRE")
+  capTableLocked Boolean @default(false)
+  lunchStartedAt DateTime?
+  lunchEndsAt    DateTime?
+  freezeAt     DateTime?
+  marketOpenAt DateTime?
+  createdAt    DateTime  @default(now())
+  createdBy    String    @default("seed")
+}
+
+model Param {
+  key        String @id
+  value      String
+  formulaOfN String?
+  sourceRef  String?
+}
+
+model Tick {
+  tickNo      Int       @id
+  startsAt    DateTime  @default(now())
+  settledAt   DateTime?
+  settledBy   String?
+  snapshotRef String?
+  notes       String?
+}
+
+model Resource {
+  code           String @id
+  bankBasePrice  Int
+  bankStockT1    Int
+  restockPerTick Int
+}
+
+model Slot {
+  code                String @id
+  name                String
+  institutionFallback String
+}
+
+model SectorTag {
+  code String @id
+}
+
+model SettlementLock {
+  id       Int       @id @default(1)
+  lockedAt DateTime?
+  lockedBy String?
+  tickNo   Int?
+}
+
+model Company {
+  id                  String   @id
+  name                String
+  archetype           String   @default("startup")
+  cluster             Json     @default("[]")
+  workforceMix        String   @default("TECH_LED")
+  origin              String?
+  active              Boolean  @default(true)
+  reserveOrder        Int?
+  lifecycle           String   @default("OPERATING")
+  distressedSinceTick Int?
+  strategicAdjustment Int      @default(0)
+  ceoPersona          String   @default("Operator")
+  deficitDomain       String   @default("Operations")
+  criticalSlot        String?
+  fillsSlots          Json     @default("[]")
+  needsSlots          Json     @default("[]")
+  gateRef             String?
+  baselineRv          Int?
+  foundedTick         Int?
+  parentCompanyId     String?
+  createdAt           DateTime @default(now())
+  createdBy           String   @default("seed")
+}
+
+model CompanyTier {
+  id                String @id @default(cuid())
+  companyId         String
+  resource          String
+  effectiveFromTick Int      @default(0)
+  tier              String
+  reason            String?
+  @@unique([companyId, resource, effectiveFromTick])
+}
+
+model RequiredSeat {
+  id          String @id @default(cuid())
+  companyId   String
+  domain      String
+  required    Int
+  fixedAtTick Int     @default(0)
+  reason      String?
+  @@unique([companyId, domain])
+}
+
+model ProductCard {
+  id              String  @id @default(cuid())
+  companyId       String
+  name            String
+  deliveryUnit    String  @default("unit")
+  resourceCost    Json    @default("{}")
+  unitsPerTick    Int     @default(1)
+  listPrice       Int     @default(500)
+  floorPrice      Int     @default(400)
+  eligibleBuyers  Json    @default("[]")
+  licenceRequired String?
+  isSupplyProduct Boolean @default(false)
+  recipe          Json?
+  capacity        Int?
+  upgrades        Int     @default(0)
+}
+
+model NotableAsset {
+  id              String @id @default(cuid())
+  companyId       String
+  type            String
+  bookValue       Int
+  pledgedToLoanId String?
+}
+
+model Participant {
+  id                     String    @id @default(cuid())
+  name                   String
+  badgeNo                String    @unique
+  arrivalTime            DateTime?
+  companyId              String?
+  status                 String    @default("EMPLOYEE")
+  domain                 String    @default("Operations")
+  level                  Int       @default(0)
+  salary                 Int       @default(100)
+  isSignatory            Boolean   @default(false)
+  capabilityTags         Json      @default("[]")
+  moveCooldownUntilTick  Int?
+  retentionLockUntilTick Int?
+  qrToken                String    @unique
+  needsFlag              Boolean   @default(false)
+  walletAccountId        String?
+  createdAt              DateTime  @default(now())
+  createdBy              String    @default("seed")
+}
+
+model Volunteer {
+  id              String   @id @default(cuid())
+  name            String
+  role            String
+  deskOrCompany   String?
+  loginSecretHash String
+  createdAt       DateTime @default(now())
+  createdBy       String   @default("seed")
+}
+
+model Employment {
+  id                String @id @default(cuid())
+  participantId     String
+  companyId         String
+  role              String @default("staff")
+  domain            String @default("Operations")
+  level             Int    @default(0)
+  salary            Int    @default(100)
+  equityGrantShares Int    @default(0)
+  retentionBonus    Int    @default(0)
+  state             String @default("ACTIVE")
+  offerExpiresTick  Int?
+  startTick         Int    @default(0)
+  endTick           Int?
+  counterofferOf    String?
+}
+
+model TalentIndex {
+  id     String @id @default(cuid())
+  domain String
+  tick   Int
+  index  Int    @default(100)
+  @@unique([domain, tick])
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  ownerType String
+  ownerId   String
+  label     String
+  createdAt DateTime @default(now())
+  createdBy String   @default("seed")
+  @@unique([ownerType, ownerId, label])
+}
+
+model JournalEntry {
+  id              String   @id @default(cuid())
+  txId            String
+  tick            Int      @default(0)
+  postedAt        DateTime @default(now())
+  accountId       String
+  asset           String
+  amount          Int
+  kind            String
+  refType         String?
+  refId           String?
+  paperFormNo     String?
+  enteredBy       String   @default("system")
+  stepNo          Int?
+  reversesEntryId String?
+  @@index([accountId, asset])
+  @@index([tick])
+  @@index([txId])
+}
+
+model Transaction {
+  id             String   @id @default(cuid())
+  type           String
+  status         String   @default("SETTLED")
+  proposedTick   Int?
+  acceptedAt     DateTime?
+  negotiatorIds  Json?
+  signerIds      Json?
+  desk           String?
+  paperFormNo    String?
+  flags          Json?
+  idempotencyKey String?  @unique
+  reason         String?
+  createdAt      DateTime @default(now())
+  createdBy      String   @default("system")
+}
+
+model Contract {
+  id                  String   @id @default(cuid())
+  type                String   @default("RECURRING")
+  sellerId            String?
+  buyerId             String?
+  customerCardId      String?
+  unitsPerTick        Int?
+  pricePerUnit        Int?
+  startTick           Int      @default(1)
+  endTick             Int      @default(6)
+  settlement          String   @default("PER_TICK")
+  penaltyPct          Int      @default(10)
+  latePaymentPct      Int      @default(10)
+  exclusivityUntil    Int?
+  forceMajeureCodes   Json?
+  state               String   @default("PROPOSED")
+  consecutiveBreaches Int      @default(0)
+  createdAt           DateTime @default(now())
+  createdBy           String   @default("seed")
+}
+
+model ContractLine {
+  id             String  @id @default(cuid())
+  contractId     String
+  tick           Int
+  unitsDue       Int
+  unitsDelivered Int     @default(0)
+  paymentDue     Int
+  paymentMade    Int     @default(0)
+  outcome        String?
+  @@unique([contractId, tick])
+}
+
+model Loan {
+  id              String   @id @default(cuid())
+  product         String
+  lenderAccount   String   @default("BANK")
+  borrowerCompany String
+  principal       Int
+  flatRate        Int      @default(10)
+  termTicks       Int      @default(4)
+  schedule        String   @default("EQUAL")
+  firstDueTick    Int
+  securityRef     String?
+  state           String   @default("DISBURSED")
+  missedCount     Int      @default(0)
+  createdAt       DateTime @default(now())
+  createdBy       String   @default("seed")
+}
+
+model ReliabilityEvent {
+  id        String   @id @default(cuid())
+  companyId String
+  tick      Int
+  kind      String
+  ref       String?
+  createdAt DateTime @default(now())
+  createdBy String   @default("system")
+}
+
+model ShareHolding {
+  id         String @id @default(cuid())
+  companyId  String
+  holderType String
+  holderId   String
+  shares     Int
+  class      String @default("COMMON")
+  rights     Json?
+  @@unique([companyId, holderType, holderId, class])
+}
+
+model TermSheet {
+  id                   String   @id @default(cuid())
+  companyId            String
+  product              String
+  sponsorPartner       String   @default("Partner")
+  amount               Int
+  rvAtSigning          Int
+  preMoney             Int
+  multiple             Float
+  pricePerShare        Float
+  newShares            Int
+  tranche2Amount       Int?
+  tranche2Milestone    String?
+  tranche2DeadlineTick Int?
+  state                String   @default("PROPOSED")
+  expiresTick          Int
+  createdAt            DateTime @default(now())
+  createdBy            String   @default("seed")
+}
+
+model ProductionOrder {
+  id                String @id @default(cuid())
+  companyId         String
+  productId         String
+  standingQty       Int    @default(1)
+  effectiveFromTick Int    @default(1)
+}
+
+model CompanyTick {
+  id                 String   @id @default(cuid())
+  companyId          String
+  tick               Int
+  cash               Int      @default(0)
+  debt               Int      @default(0)
+  receivables        Int      @default(0)
+  resourcesValue     Int      @default(0)
+  nav                Int      @default(0)
+  verifiedRevenue    Int      @default(0)
+  rv                 Int      @default(0)
+  wc                 Int      @default(0)
+  creditGrade        String   @default("B")
+  runway             Int      @default(99)
+  ticksAtZero        Json?
+  distressedTriggers Json?
+  arrears            Int      @default(0)
+  @@unique([companyId, tick])
+}
+
+// Catalogue / game-state models (flexible Json payload + key fields)
+model CustomerCard {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  title       String
+  segment     String  @default("Enterprise")
+  sector      String  @default("Tech and Data")
+  ratePerTick Int     @default(1000)
+  ticks       Int     @default(4)
+  decideBy    Int?
+  assignee    String?
+  mustLicence String?
+  heldBack    Boolean @default(false)
+  payload     Json?
+}
+
+model CustomerCardInstance {
+  id         String @id @default(cuid())
+  cardId     String
+  companyId  String?
+  state      String @default("OPEN")
+  awardedTick Int?
+}
+
+model SupplierLine {
+  id         String  @id @default(cuid())
+  code       String  @unique
+  name       String
+  resource   String
+  price      Float   @default(20)
+  bandLow    Float?
+  bandHigh   Float?
+  minOrder   Int     @default(20)
+  terms      String  @default("upfront")
+  kind       String  @default("STANDARD")
+  capacityPT Int     @default(120)
+  payload    Json?
+}
+
+model BankProduct {
+  id      String @id @default(cuid())
+  code    String @unique
+  name    String
+  terms   Json?
+  active  Boolean @default(true)
+}
+
+model InvestorProduct {
+  id      String @id @default(cuid())
+  code    String @unique
+  name    String
+  terms   Json?
+  active  Boolean @default(true)
+}
+
+model Licence {
+  id       String @id @default(cuid())
+  code     String @unique
+  name     String
+  fee      Int
+  ticks    Int    @default(1)
+  requires Json?
+}
+
+model Grant {
+  id     String @id @default(cuid())
+  code   String @unique
+  name   String
+  maxAmt Int
+  terms  Json?
+}
+
+model Tender {
+  id       String @id @default(cuid())
+  code     String @unique
+  name     String
+  value    Int
+  requires String?
+  sector   String  @default("Tech and Data")
+  releaseTick Int  @default(3)
+  state    String  @default("QUEUED")
+}
+
+model RegInstrument {
+  id      String @id @default(cuid())
+  code    String @unique
+  name    String
+  payload Json?
+}
+
+model MediaProduct {
+  id    String @id @default(cuid())
+  code  String @unique
+  name  String
+  price Int
+  terms Json?
+}
+
+model MediaOutlet {
+  id       String @id @default(cuid())
+  code     String @unique
+  name     String
+  slots    Int    @default(1)
+  booked   Int    @default(0)
+  payload  Json?
+}
+
+model LicenceHolding {
+  id        String @id @default(cuid())
+  companyId String
+  licenceId String
+  state     String @default("PENDING")
+}
+
+model MissionCard {
+  id       String @id @default(cuid())
+  code     String @unique
+  title    String
+  tier     Int    @default(1)
+  reward   Int    @default(500)
+  window   Int    @default(2)
+  deadline Int    @default(1)
+  flags    Json?
+  active   Boolean @default(true)
+}
+
+model MissionInstance {
+  id        String @id @default(cuid())
+  missionId String
+  companyId String?
+  holderId  String?
+  state     String @default("OPEN")
+  tick      Int    @default(0)
+}
+
+model OpportunityCard {
+  id      String @id @default(cuid())
+  code    String @unique
+  title   String
+  value   Int    @default(1000)
+  method  String @default("FIRST_COMMIT")
+  payload Json?
+  state   String @default("QUEUED")
+}
+
+model OpportunityInstance {
+  id        String @id @default(cuid())
+  oppId     String
+  companyId String?
+  state     String @default("LIVE")
+  tick      Int    @default(0)
+}
+
+model EventCrisisCard {
+  id      String @id @default(cuid())
+  code    String @unique
+  kind    String
+  title   String
+  tick    Int    @default(1)
+  payload Json?
+  state   String @default("QUEUED")
+}
+
+model DeckEntry {
+  id        String @id @default(cuid())
+  tick      Int
+  cardId    String
+  state     String @default("QUEUED")
+  targetId  String?
+  vetoLog   String?
+}
+
+model Signal {
+  id       String @id @default(cuid())
+  tick     Int
+  cardCode String
+  holderId String
+  channel  String @default("whisper")
+}
+
+model CrisisHit {
+  id        String @id @default(cuid())
+  tick      Int
+  cardCode  String
+  companyId String
+  amount    Int    @default(0)
+}
+
+model AuctionLot {
+  id           String @id @default(cuid())
+  code         String @unique
+  title        String
+  openingPrice Int
+  floorPrice   Int
+  state        String @default("OPEN")
+  winnerId     String?
+  price        Int?
+}
+
+model Bid {
+  id        String @id @default(cuid())
+  lotId     String
+  bidderId  String
+  amount    Int
+  tick      Int @default(0)
+}
+
+model InfoCard {
+  id         String @id @default(cuid())
+  code       String @unique
+  title      String
+  grade      String @default("C")
+  copy       String @default("")
+  provenance String @default("")
+  truthStatus String @default("UNVERIFIED")
+  hiddenNeed String?
+  bestFit    String?
+}
+
+model InfoHolding {
+  id            String @id @default(cuid())
+  cardId        String
+  holderId      String
+  holderCompany String?
+  state         String @default("HELD")
+}
+
+model InfoTrade {
+  id       String @id @default(cuid())
+  cardId   String
+  fromId   String
+  toId     String
+  price    Int    @default(0)
+}
+
+model InfoVerification {
+  id       String @id @default(cuid())
+  cardId   String
+  verifier String
+  result   String @default("PENDING")
+}
+
+model Broker {
+  id        String @id @default(cuid())
+  companyId String
+  name      String
+}
+
+model WhisperLog {
+  id       String @id @default(cuid())
+  tick     Int
+  fromId   String
+  toId     String
+  topic    String @default("")
+}
+
+model ObjectiveTemplate {
+  id    String @id @default(cuid())
+  code  String @unique
+  title String
+  text  String @default("")
+}
+
+model ObjectiveAssignment {
+  id          String @id @default(cuid())
+  templateId  String
+  holderId    String
+  holderCompany String?
+  state       String @default("ACTIVE")
+  note        String?
+}
+
+model FounderEntry {
+  id        String @id @default(cuid())
+  companyId String
+  tick      Int
+  band      String @default("C")
+  score     Int    @default(0)
+  note      String?
+}
+
+model Ruling {
+  id        String @id @default(cuid())
+  tick      Int
+  text      String
+  by        String @default("GM")
+}
+
+model Incident {
+  id        String @id @default(cuid())
+  tick      Int
+  text      String
+  severity  String @default("LOW")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tick      Int      @default(0)
+  actor     String
+  action    String
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
+}
+
+model Snapshot {
+  id        String   @id @default(cuid())
+  tick      Int
+  phase     String
+  fileRef   String?
+  data      Json?
+  createdAt DateTime @default(now())
+  createdBy String   @default("system")
+}
+
+model DecisionCard {
+  id        String @id @default(cuid())
+  companyId String
+  thesisFit Float  @default(1.0)
+  checks    Json?
+  multiple  Float  @default(0.5)
+}
