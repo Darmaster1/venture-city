@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       </div>
     </div>`);
   }
-  const tents: string[] = vols.map((x) => `<div class="tent">
+  const tents: string = vols.map((x) => `<div class="tent">
       <div class="bname">${esc(x.name)}</div>
       <div class="bco">${esc(x.role)}${x.deskOrCompany ? ` · ${esc(x.deskOrCompany)}` : ""}</div>
       <div class="cred">ID <b>${esc(x.id)}</b> · ask the GM for your secret</div>
