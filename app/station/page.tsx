@@ -3,7 +3,7 @@ import { verifySession } from "@/src/auth";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { canReadCompany } from "@/src/policy";
-import { Navbar, Footer, Stat, CoDot } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, CoDot, HeroOrbs } from "@/src/components/chrome";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +33,7 @@ export default async function StationPage() {
       <Navbar />
       <div className="wrap">
         <div className="hero" style={{ padding: "36px 32px" }}>
+          <HeroOrbs />
           <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>Company station · <span className="badge vip">{co?.lifecycle}</span></div>
           <h1 style={{ fontSize: 42 }}><CoDot id={co?.id ?? ""} />{co?.name}</h1>
           <p>Reportable value {tick?.rv ?? "–"} VB · everything below is live from the journal.</p>

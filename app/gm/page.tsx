@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Navbar, Footer } from "@/src/components/chrome";
+import { Navbar, Footer, HeroOrbs } from "@/src/components/chrome";
 
 export default function GMPage() {
   const [log, setLog] = useState<string[]>([]);
@@ -19,20 +19,33 @@ export default function GMPage() {
     const j = await r.json();
     setMsg(r.ok ? `Clock: ${j.clockState}` : (j.error ?? "Failed."));
   }
+  async function backup() {
+    setMsg("Exporting journal backup.");
+    const r = await fetch("/api/gm/backup", { method: "POST" });
+    const j = await r.json().catch(() => ({}));
+    setMsg(r.ok ? `Backup saved (${j.count ?? "?"} entries).` : (j.error ?? "Backup failed."));
+  }
   return (
     <div>
       <Navbar />
       <div className="wrap">
         <div className="hero" style={{ padding: "36px 32px" }}>
+          <HeroOrbs />
           <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>Game master console</div>
           <h1 style={{ fontSize: 40 }}>Run the city.</h1>
           <p>Settle ticks, freeze the market, post manual entries. Every action is journaled.</p>
           <div className="hero-cta">
             <button className="btn btn-danger" onClick={settle} disabled={busy} style={{ height: 48, padding: "0 28px", fontSize: 16 }}>{busy ? "Settling." : "Settle tick"}</button>
-            <button className="btn btn-light" onClick={() => freeze(true)}>Freeze the city</button>
-            <button className="btn btn-light" onClick={() => freeze(false)}>Resume</button>
-            <a className="btn btn-light" href="/api/paper-export?tick=0">Paper export</a>
-            <a className="btn btn-light" href="/api/gm/badges">Badges</a>
+            <details className="menu">
+              <summary className="btn btn-light">More actions ▾</summary>
+              <div className="drop">
+                <button onClick={() => freeze(true)}>Freeze the city</button>
+                <button onClick={() => freeze(false)}>Resume</button>
+                <a href="/api/paper-export?tick=0">Paper export</a>
+                <a href="/api/gm/badges">Badges</a>
+                <button onClick={backup}>Backup journal</button>
+              </div>
+            </details>
           </div>
         </div>
         <p aria-live="polite"><b>{msg}</b></p>

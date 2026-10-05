@@ -1,7 +1,7 @@
 "use client";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Navbar, Footer } from "@/src/components/chrome";
+import { Navbar, Footer, HeroOrbs } from "@/src/components/chrome";
 
 export default function LoginPage() {
   return (
@@ -34,6 +34,7 @@ function Forms() {
   return (
     <div className="wrap" style={{ maxWidth: 520 }}>
         <div className="hero" style={{ padding: "36px 32px" }}>
+          <HeroOrbs />
           <h1 style={{ fontSize: 36 }}>Your badge is your ticket.</h1>
           <p>Paste the code from your badge QR. Volunteers, use your desk account below.</p>
         </div>

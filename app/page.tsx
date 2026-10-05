@@ -1,4 +1,4 @@
-import { Navbar, Footer } from "@/src/components/chrome";
+import { Navbar, Footer, HeroOrbs } from "@/src/components/chrome";
 import { prisma } from "@/src/db";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export default async function Landing() {
       <Navbar />
       <div className="wrap">
         <div className="hero">
+          <HeroOrbs />
           <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>One day · ten startups · one economy</div>
           <h1>Build your venture before the market freezes.</h1>
           <p>Venture City is a live-action startup simulation: trade resources, win customers, raise funding and survive ten market ticks. Every balance is journaled. Nothing is paper — until the internet drops.</p>
@@ -37,10 +38,15 @@ export default async function Landing() {
         </div>
         <div className="card">
           <div className="label">Tonight's lineup · the City 10</div>
-          <div className="ticker" style={{ marginTop: 10 }}>
-            {(companies.length ? companies.map((c) => c.name) : ["SwiftCart", "Ledgerly", "Mango & Co.", "SkillForge", "PulseAI", "GreenGrid", "MediLink", "StackHouse", "Voltway", "TrustLayer"]).map((n) => (
-              <span className="chip" key={n}>{n}</span>
-            ))}
+          <div className="marquee" style={{ marginTop: 10 }}>
+            <div className="marquee-track">
+              {(companies.length ? companies.map((c) => c.name) : ["SwiftCart", "Ledgerly", "Mango & Co.", "SkillForge", "PulseAI", "GreenGrid", "MediLink", "StackHouse", "Voltway", "TrustLayer"]).map((n) => (
+                <span className="chip" key={n}>{n}</span>
+              ))}
+              {(companies.length ? companies.map((c) => c.name) : ["SwiftCart", "Ledgerly", "Mango & Co.", "SkillForge", "PulseAI", "GreenGrid", "MediLink", "StackHouse", "Voltway", "TrustLayer"]).map((n) => (
+                <span className="chip" key={n + "-2"} aria-hidden="true">{n}</span>
+              ))}
+            </div>
           </div>
         </div>
       </div>

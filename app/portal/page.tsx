@@ -2,7 +2,7 @@ import { prisma } from "@/src/db";
 import { verifySession } from "@/src/auth";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Navbar, Footer, Stat, CoDot } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, CoDot, HeroOrbs } from "@/src/components/chrome";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +26,7 @@ export default async function PortalPage() {
       <Navbar />
       <div className="wrap" style={{ maxWidth: 760 }}>
         <div className="hero" style={{ padding: "36px 32px" }}>
+          <HeroOrbs />
           <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>Tick {run?.currentTick ?? 0} of 10 · {p.domain} L{p.level}</div>
           <h1 style={{ fontSize: 38 }}>Hey {p.name.split(" ")[0]}, here's your city.</h1>
           <p>{co ? (<span>Running with {co.name}. Wallet below, objective below that — go make money.</span>) : "No company yet — find registration."}</p>
