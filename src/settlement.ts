@@ -91,7 +91,7 @@ async function bulkPost(tick: number, ops: Op[]): Promise<void> {
   }
   if (!valid.length) return;
   await prisma.transaction.createMany({
-    data: valid.map((o) => ({ id: o.txId, type: o.type, status: "SETTLED", proposedTick: tick, refType: o.refType, refId: o.refId, idempotencyKey: o.key, createdBy: o.enteredBy }))
+    data: valid.map((o) => ({ id: o.txId, type: o.type, status: "SETTLED", proposedTick: tick, idempotencyKey: o.key, createdBy: o.enteredBy }))
   });
   const entries = valid.flatMap((o) =>
     o.legs.map((l) => ({ txId: o.txId, tick, accountId: l.acc, asset: l.asset, amount: l.amt, kind: o.kind, refType: o.refType, refId: o.refId, enteredBy: o.enteredBy, stepNo: o.stepNo }))
