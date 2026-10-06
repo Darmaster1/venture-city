@@ -85,13 +85,18 @@ export function HeroOrbs() {
   return (<><span className="orb orb-a" /><span className="orb orb-b" /></>);
 }
 
+import CursorRingField from "@/src/components/cursor-ring-field";
+
 export function PageHero({ eyebrow, title, sub }: { eyebrow: string; title: string; sub: string }) {
   return (
     <div className="hero" style={{ padding: "30px 30px" }}>
+      <div className="field-bg" aria-hidden="true"><CursorRingField /></div>
       <HeroOrbs />
-      <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>{eyebrow}</div>
-      <h1 style={{ fontSize: 34 }}>{title}</h1>
-      <p style={{ marginBottom: 0 }}>{sub}</p>
+      <div className="hero-content">
+        <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>{eyebrow}</div>
+        <h1 style={{ fontSize: 34 }}>{title}</h1>
+        <p style={{ marginBottom: 0 }}>{sub}</p>
+      </div>
     </div>
   );
 }

@@ -132,11 +132,12 @@ function ParticipantChecks() {
 
 function ResetPanel() {
   const [confirm, setConfirm] = useState("");
+  const [cleanParticipants, setCleanParticipants] = useState(false);
   const [out, setOut] = useState("");
   const [crew, setCrew] = useState<Array<{ id: string; name: string; secret: string | null }>>([]);
   async function reset(e: React.FormEvent) {
     e.preventDefault();
-    const r = await fetch("/api/gm/reset", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm }) });
+    const r = await fetch("/api/gm/reset", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm, cleanParticipants }) });
     const j = await r.json();
     if (r.ok) { setCrew(j.crew ?? []); setOut("Reset complete. Tick 0, fresh badges. gm-1 unchanged."); }
     else setOut(j.error ?? "Failed.");
@@ -145,9 +146,15 @@ function ResetPanel() {
   return (
     <div>
       <p style={{ color: "var(--fg-muted)" }}>Wipes journal, contracts, loans, players, missions — back to a fresh T0. <b>gm-1 keeps its password.</b> Every other volunteer gets a new secret (shown once below). Badge tokens change: reprint badges after reset.</p>
-      <form onSubmit={reset} style={{ display: "flex", gap: 8 }}>
-        <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder='Type RESET to confirm' style={{ maxWidth: 260 }} />
-        <button className="btn btn-danger" type="submit">Reset all data</button>
+      <form onSubmit={reset} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder='Type RESET to confirm' style={{ maxWidth: 260 }} />
+          <button className="btn btn-danger" type="submit">Reset all data</button>
+        </div>
+        <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14 }}>
+          <input type="checkbox" checked={cleanParticipants} onChange={(e) => setCleanParticipants(e.target.checked)} />
+          Clear participants and keep only default companies (Clean seed)
+        </label>
       </form>
       <p><b>{out}</b></p>
       {crew.length > 0 && <table className="vc"><thead><tr><th>Name</th><th>ID</th><th>Secret</th></tr></thead>

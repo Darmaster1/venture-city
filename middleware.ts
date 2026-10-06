@@ -6,6 +6,14 @@ const PUBLIC = ["/", "/board", "/login", "/api/board", "/api/auth", "/api/health
 
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
+  if (req.method === "POST" && path.startsWith("/api/") && path !== "/api/auth") {
+    const csrfCookie = req.cookies.get("vc_csrf")?.value;
+    const csrfHeader = req.headers.get("x-csrf-token");
+    if (csrfCookie && csrfHeader && csrfCookie !== csrfHeader) {
+      return NextResponse.json({ error: "CSRF verification failed." }, { status: 403 });
+    }
+  }
+
   if (PUBLIC.some((p) => path === p || path.startsWith(p + "/") || path.startsWith("/_next") || path.includes("."))) return NextResponse.next();
   const token = req.cookies.get("vc_session")?.value;
   if (!token) return NextResponse.redirect(new URL("/login", req.url));

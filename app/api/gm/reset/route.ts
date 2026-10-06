@@ -51,6 +51,10 @@ export async function POST(req: Request) {
     await prisma.volunteer.update({ where: { id: v.id }, data: { loginSecretHash: hashSecret(secret) } });
     out.push({ id: v.id, name: v.name, role: v.role, deskOrCompany: v.deskOrCompany, secret });
   }
+  if (b.cleanParticipants) {
+    await prisma.employment.deleteMany();
+    await prisma.participant.deleteMany();
+  }
   await prisma.auditLog.create({ data: { actor: g.id, action: "RESET", tick: 0 } });
   return Response.json({ ok: true, tick: 0, crew: out, note: "gm-1 password unchanged. All other volunteer secrets above are new — copy them now." });
 }
