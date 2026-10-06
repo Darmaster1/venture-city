@@ -30,15 +30,16 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 
 ---
 
-## 3. Database State (Production)
+## 3. Database State (Production) — VERIFIED 2026-10-06 09:15 UTC
 
-- **Current tick**: 1 (test settle was run; needs reset to T0 before event)
-- **Clock**: RUNNING
+- **Current tick**: 0 (clean T0, ready for event)
+- **Clock**: PRE
 - **Companies**: 10 (SWC, LED, MAN, SKF, PAI, GRG, MED, STH, VLT, TRL)
 - **Participants**: 80 (8 per company, badges 100–179)
 - **Employment rows**: 80 (all ACTIVE)
 - **gm-1 volunteer**: exists, password hash matches `4d4cb626a0eab88a9481cd3d`
 - **No other volunteers exist** — crew must be created via GM console
+- **Settle verified**: tick 1 completes in ~44s, ledger conserves to 0, all 10 CompanyTick rows written
 
 ---
 
@@ -156,7 +157,9 @@ The settle runs in **bulk mode** (not a single transaction) to avoid serverless 
 | CSRF not enforced on POST routes | OPEN | Cookie issued but middleware doesn't check it |
 | `postTransaction` has unused `ext` param | LOW | Optional Prisma tx client param is typed but not used |
 | `available()` escrow logic simplified | LOW | Sums ESCROW_HOLD kinds; leading auction bids should route through escrowHold() |
-| Production settle 504 at 60s | FIXED | Bulk rewrite reduced to ~12s; needs re-verification after latest push |
+| Production settle 504 at 60s | FIXED | Bulk rewrite + refType fix; verified 2026-10-06: 44s, ledger balanced |
+| Only 4 companies on board | FIXED | Incomplete seed after reset; reseeded directly via FORCE_SEED=1 |
+| refType/refId on Transaction createMany | FIXED | Removed from createMany call; pushed 39a53bd |
 | `gm-1` password in git history | MITIGATED | Rotated; old password dead; scripts scrubbed |
 
 ---
