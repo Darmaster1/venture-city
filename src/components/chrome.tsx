@@ -1,3 +1,5 @@
+"use client";
+
 export const COMPANY_COLORS: Record<string, string> = {
   SWC: "#3B6EA5", LED: "#6A4C93", MAN: "#C25E2B", SKF: "#12B76A", PAI: "#06AED4",
   GRG: "#4A7C2F", MED: "#E84FB8", STH: "#5A5A66", VLT: "#F79009", TRL: "#7A3E9C"
