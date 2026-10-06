@@ -1,12 +1,11 @@
 import { prisma } from "@/src/db";
-import { Navbar, Footer, Stat } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, PageHero } from "@/src/components/chrome";
 export const runtime = "nodejs"; export const dynamic = "force-dynamic";
 export default async function Page() {
   const lines = await prisma.supplierLine.findMany();
   const std = lines.filter((l) => l.kind === "STANDARD");
   return (<div><Navbar /><div className="wrap">
-    <h1 className="page-title">Supplier market</h1>
-    <p className="page-sub">Standard lines and spot alternatives. T0 agreements lapse at Tick 4 unless renewed.</p>
+    <PageHero eyebrow="Institution desk" title="Supplier market" sub="Standard lines and spot alternatives. T0 agreements lapse at Tick 4 unless renewed." />
     <div className="stat-grid">
       <Stat label="Standard lines" value={String(std.length)} color="#C25E2B" />
       <Stat label="Alternatives" value={String(lines.length - std.length)} color="#6C3DF4" />

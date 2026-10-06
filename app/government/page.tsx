@@ -1,11 +1,10 @@
 import { prisma } from "@/src/db";
-import { Navbar, Footer, Stat } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, PageHero } from "@/src/components/chrome";
 export const runtime = "nodejs"; export const dynamic = "force-dynamic";
 export default async function Page() {
   const lic = await prisma.licence.findMany(); const grants = await prisma.grant.findMany(); const tenders = await prisma.tender.findMany();
   return (<div><Navbar /><div className="wrap">
-    <h1 className="page-title">Government desk</h1>
-    <p className="page-sub">Licences in arrival order — 3 decisions per tick. Grants pool 30,000 VB.</p>
+    <PageHero eyebrow="Institution desk" title="Government desk" sub="Licences in arrival order — 3 decisions per tick. Grants pool 30,000 VB." />
     <div className="stat-grid">
       <Stat label="Licences" value={String(lic.length)} color="#2F855A" />
       <Stat label="Grant pool" value="30,000 VB" sub="window T5–6" color="#E8930C" />

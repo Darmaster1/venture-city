@@ -1,12 +1,11 @@
 import { prisma } from "@/src/db";
-import { Navbar, Footer, Stat } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, PageHero } from "@/src/components/chrome";
 export const runtime = "nodejs"; export const dynamic = "force-dynamic";
 export default async function Page() {
   const cards = await prisma.customerCard.findMany({ take: 40 });
   const open = cards.filter((c) => !c.heldBack);
   return (<div><Navbar /><div className="wrap">
-    <h1 className="page-title">Customer desk</h1>
-    <p className="page-sub">Award cards, accept pilots and deliveries, renew anchors at Tick 6.</p>
+    <PageHero eyebrow="Institution desk" title="Customer desk" sub="Award cards, accept pilots and deliveries, renew anchors at Tick 6." />
     <div className="stat-grid">
       <Stat label="Open cards" value={String(open.length)} color="#0E9FD8" />
       <Stat label="Pipeline value" value={`${open.reduce((s, c) => s + c.ratePerTick * c.ticks, 0).toLocaleString("en-IN")} VB`} color="#2F855A" />

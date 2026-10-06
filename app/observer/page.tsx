@@ -1,10 +1,9 @@
 "use client";
-import { Navbar, Footer, Stat } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, PageHero } from "@/src/components/chrome";
 export const runtime = "nodejs"; export const dynamic = "force-dynamic";
 export default function Page() {
   return (<div><Navbar /><div className="wrap">
-    <h1 className="page-title">Observer deck</h1>
-    <p className="page-sub">Watch zones, file observation cards, flag moments. Observer eyes only.</p>
+    <PageHero eyebrow="Crew" title="Observer deck" sub="Watch zones, file observation cards, flag moments. Observer eyes only." />
     <div className="stat-grid">
       <Stat label="Zones" value="4" color="#6C3DF4" />
       <Stat label="Flagged moments" value="0" color="#E8930C" />

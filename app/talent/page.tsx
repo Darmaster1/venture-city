@@ -1,11 +1,10 @@
 import { prisma } from "@/src/db";
-import { Navbar, Footer, Stat } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, PageHero } from "@/src/components/chrome";
 export const runtime = "nodejs"; export const dynamic = "force-dynamic";
 export default async function Page() {
   const idx = await prisma.talentIndex.findMany({ take: 20 });
   return (<div><Navbar /><div className="wrap">
-    <h1 className="page-title">Talent exchange</h1>
-    <p className="page-sub">Specialist contracts — one per company at a time, min 2 ticks.</p>
+    <PageHero eyebrow="Institution desk" title="Talent exchange" sub="Specialist contracts — one per company at a time, min 2 ticks." />
     <div className="stat-grid">
       <Stat label="Fee formula" value="400 × idx" sub="/ 100 per tick" color="#6C3DF4" />
       <Stat label="Open contracts" value="10" color="#0E9FD8" />

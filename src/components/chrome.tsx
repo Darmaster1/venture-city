@@ -68,3 +68,14 @@ export function CoDot({ id }: { id: string }) {
 export function HeroOrbs() {
   return (<><span className="orb orb-a" /><span className="orb orb-b" /></>);
 }
+
+export function PageHero({ eyebrow, title, sub }: { eyebrow: string; title: string; sub: string }) {
+  return (
+    <div className="hero" style={{ padding: "30px 30px" }}>
+      <HeroOrbs />
+      <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>{eyebrow}</div>
+      <h1 style={{ fontSize: 34 }}>{title}</h1>
+      <p style={{ marginBottom: 0 }}>{sub}</p>
+    </div>
+  );
+}

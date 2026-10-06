@@ -1,11 +1,10 @@
 import { prisma } from "@/src/db";
-import { Navbar, Footer, Stat } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, PageHero } from "@/src/components/chrome";
 export const runtime = "nodejs"; export const dynamic = "force-dynamic";
 export default async function Page() {
   const prods = await prisma.mediaProduct.findMany();
   return (<div><Navbar /><div className="wrap">
-    <h1 className="page-title">Media desk</h1>
-    <p className="page-sub">Stories, campaigns and audience access. Brand discount 25% on features.</p>
+    <PageHero eyebrow="Institution desk" title="Media desk" sub="Stories, campaigns and audience access. Brand discount 25% on features." />
     <div className="stat-grid">
       <Stat label="Products" value={String(prods.length)} color="#E84FB8" />
       <Stat label="Viral threshold" value="5" sub="buyers · +20 sector index" color="#FF9F2E" />

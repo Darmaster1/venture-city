@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Navbar, Footer, Stat } from "@/src/components/chrome";
+import { Navbar, Footer, Stat, PageHero } from "@/src/components/chrome";
 
 export default function BankPage({ resources, products }: {
   resources: { code: string; bankBasePrice: number; bankStockT1: number }[];
@@ -18,8 +18,7 @@ export default function BankPage({ resources, products }: {
     <div>
       <Navbar />
       <div className="wrap">
-        <h1 className="page-title">Bank desk</h1>
-        <p className="page-sub">Sell resources, buy back surplus, disburse loans. Limit 30 units per company per tick.</p>
+        <PageHero eyebrow="Institution desk" title="Bank desk" sub="Sell resources, buy back surplus, disburse loans. Limit 30 units per company per tick." />
         <div className="stat-grid">
           <Stat label="Lending pool" value="80,000 VB" sub="8000 x 10 companies" color="#2F855A" />
           <Stat label="Debt cap" value="30,000 VB" sub="per company" color="#E8930C" />
