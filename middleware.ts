@@ -19,6 +19,14 @@ export async function middleware(req: NextRequest) {
   if (!token) return NextResponse.redirect(new URL("/login", req.url));
   const s = await verifySession(token);
   if (!s) return NextResponse.redirect(new URL("/login", req.url));
+
+  // Protect /gm and /api/gm routes: Only GM, DEPUTY_GM, TECH_LEAD roles allowed
+  if (path === "/gm" || path.startsWith("/gm/") || path.startsWith("/api/gm")) {
+    if (s.kind !== "volunteer" || !["GM", "DEPUTY_GM", "TECH_LEAD"].includes(s.role)) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

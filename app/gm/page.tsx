@@ -91,25 +91,57 @@ function CrewTable() {
   const [note, setNote] = useState("");
   const load = () => fetch("/api/gm/volunteers").then((r) => r.json()).then((j) => setCrew(j.volunteers ?? [])).catch(() => null);
   useEffect(() => { load(); }, []);
+
   async function newSecret(id: string) {
     const r = await fetch("/api/gm/volunteers/reset-secret", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
     const j = await r.json();
     setNote(r.ok ? `${j.name}: new secret (copy now) ${j.secret}` : (j.error ?? "Failed."));
   }
+
   async function checkAs(id: string) {
     const r = await fetch("/api/gm/impersonate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
     const j = await r.json();
     if (r.ok) window.open(j.loginUrl, "_blank", "noopener");
     else setNote(j.error ?? "Failed.");
   }
+
+  async function renameCrew(id: string, currentName: string) {
+    const newName = prompt("Enter new name for crew member:", currentName);
+    if (!newName || newName.trim() === currentName) return;
+    const r = await fetch("/api/gm/volunteers", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, name: newName.trim() }) });
+    const j = await r.json();
+    if (r.ok) { setNote(`Updated name to ${newName}`); load(); }
+    else setNote(j.error ?? "Failed to update.");
+  }
+
+  async function deleteCrew(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete crew member ${name}?`)) return;
+    const r = await fetch(`/api/gm/volunteers?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const j = await r.json();
+    if (r.ok) { setNote(`Deleted ${name}`); load(); }
+    else setNote(j.error ?? "Failed to delete.");
+  }
+
   return (
     <div>
       <p style={{ color: "var(--fg-muted)" }}>Sign-in-as opens that desk in a new tab for fast checking. Changing a secret shows it once — copy it to the volunteer.</p>
-      <table className="vc"><thead><tr><th>Name</th><th>Role</th><th>Desk</th><th>Check</th><th>Secret</th></tr></thead>
+      <table className="vc"><thead><tr><th>Name</th><th>Role</th><th>Desk</th><th>Actions</th></tr></thead>
         <tbody>{crew.map((v) => {
-          return (<tr key={v.id}><td>{v.name}</td><td>{v.role}</td><td>{v.deskOrCompany ?? "–"}</td>
-            <td><button className="btn" style={{ minHeight: 32 }} onClick={() => checkAs(v.id)}>Check desk</button></td>
-            <td><button className="btn" style={{ minHeight: 32 }} onClick={() => newSecret(v.id)}>Change secret</button></td></tr>);
+          return (
+            <tr key={v.id}>
+              <td><b>{v.name}</b></td>
+              <td>{v.role}</td>
+              <td>{v.deskOrCompany ?? "-"}</td>
+              <td>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <button className="btn" style={{ minHeight: 32 }} onClick={() => checkAs(v.id)}>Check desk</button>
+                  <button className="btn" style={{ minHeight: 32 }} onClick={() => newSecret(v.id)}>New secret</button>
+                  <button className="btn" style={{ minHeight: 32 }} onClick={() => renameCrew(v.id, v.name)}>Rename</button>
+                  {v.id !== "gm-1" && <button className="btn btn-danger" style={{ minHeight: 32 }} onClick={() => deleteCrew(v.id, v.name)}>Delete</button>}
+                </div>
+              </td>
+            </tr>
+          );
         })}</tbody>
       </table>
       <p className="mono" style={{ wordBreak: "break-all" }}>{note}</p>

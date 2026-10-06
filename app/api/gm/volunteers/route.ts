@@ -40,3 +40,35 @@ export async function POST(req: Request) {
   await prisma.auditLog.create({ data: { actor: g.id, action: "VOLUNTEER_CREATE", refType: "Volunteer", refId: v.id, tick: 0 } });
   return Response.json({ ok: true, id: v.id, name, role, deskOrCompany, secret });
 }
+
+// Update a volunteer (name, role, deskOrCompany)
+export async function PATCH(req: Request) {
+  const g = await gmOnly(req);
+  if (!g) return Response.json({ error: "GM only." }, { status: 403 });
+  const b = await req.json().catch(() => ({}));
+  const id = String(b.id ?? "").trim();
+  if (!id) return Response.json({ error: "id required." }, { status: 400 });
+
+  const data: Record<string, unknown> = {};
+  if (b.name) data.name = String(b.name).trim();
+  if (b.role) data.role = String(b.role).trim().toUpperCase();
+  if (b.deskOrCompany !== undefined) data.deskOrCompany = b.deskOrCompany ? String(b.deskOrCompany) : null;
+
+  const updated = await prisma.volunteer.update({ where: { id }, data });
+  await prisma.auditLog.create({ data: { actor: g.id, action: "VOLUNTEER_UPDATE", refType: "Volunteer", refId: id, tick: 0 } });
+  return Response.json({ ok: true, volunteer: { id: updated.id, name: updated.name, role: updated.role, deskOrCompany: updated.deskOrCompany } });
+}
+
+// Delete a volunteer (cannot delete gm-1)
+export async function DELETE(req: Request) {
+  const g = await gmOnly(req);
+  if (!g) return Response.json({ error: "GM only." }, { status: 403 });
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return Response.json({ error: "id parameter required." }, { status: 400 });
+  if (id === "gm-1") return Response.json({ error: "Cannot delete gm-1." }, { status: 400 });
+
+  await prisma.volunteer.delete({ where: { id } });
+  await prisma.auditLog.create({ data: { actor: g.id, action: "VOLUNTEER_DELETE", refType: "Volunteer", refId: id, tick: 0 } });
+  return Response.json({ ok: true, deleted: id });
+}

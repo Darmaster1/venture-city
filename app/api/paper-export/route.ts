@@ -53,7 +53,7 @@ export async function GET(req: Request) {
     const RES = ["COMPUTE", "ENERGY", "LOGISTICS", "MATERIALS", "DATA", "INFRA"];
     const coRows = companies.map((co) => {
       const cells = RES.map((r) => `<td class="n">${coBal(co.id, r)}</td>`).join("");
-      return `<tr><td><b>${esc(co.name)}</b><br/><span class="mut">${co.id} · ${co.lifecycle}</span></td><td class="n"><b>${coBal(co.id, "VB").toLocaleString("en-IN")}</b></td>${cells}</tr>`;
+      return `<tr><td><b>${esc(co.name)}</b><br/><span class="mut">${co.id} | ${co.lifecycle}</span></td><td class="n"><b>${coBal(co.id, "VB").toLocaleString("en-IN")}</b></td>${cells}</tr>`;
     }).join("");
 
     const work = companies.map((co) => {
@@ -66,15 +66,15 @@ export async function GET(req: Request) {
       }, 0);
       const coLoans = loans.filter((l) => l.borrowerCompany === co.id);
       const loanTxt = coLoans.length
-        ? coLoans.map((l) => `${l.product} ${l.principal}VB ${l.flatRate}% ${l.termTicks}t from T${l.firstDueTick}${next >= l.firstDueTick ? ` → DUE ~${Math.ceil((l.principal + pct(l.principal, l.flatRate)) / l.termTicks)}VB` : ""} [${l.state}]`).join("<br/>")
+        ? coLoans.map((l) => `${l.product} ${l.principal}VB ${l.flatRate}% ${l.termTicks}t from T${l.firstDueTick}${next >= l.firstDueTick ? ` -> DUE ~${Math.ceil((l.principal + pct(l.principal, l.flatRate)) / l.termTicks)}VB` : ""} [${l.state}]`).join("<br/>")
         : "none";
       const coLines = liveLines.filter((l) => contracts.some((x) => x.id === l.contractId && (x.sellerId === co.id || x.buyerId === co.id)));
       const lineTxt = coLines.length
         ? coLines.map((l) => `contract ${l.contractId.slice(0, 8)}: deliver ${l.unitsDue}u, collect/pay ${l.paymentDue}VB`).join("<br/>")
         : "none due";
-      return `<div class="work"><h3>${esc(co.name)} <span class="mut">${co.id} · staff ${staff.length} · RV ${rvOf.get(co.id) ?? "–"}</span></h3>
-        <table><tr><th>Salaries T${next}</th><th>Consumption/tick</th><th>Empty seats (×225VB)</th></tr>
-        <tr><td class="n">${salaryBill.toLocaleString("en-IN")} VB</td><td>${esc(tierTxt) || "—"}</td><td class="n">${empty}</td></tr></table>
+      return `<div class="work"><h3>${esc(co.name)} <span class="mut">${co.id} | staff ${staff.length} | RV ${rvOf.get(co.id) ?? "-"}</span></h3>
+        <table><tr><th>Salaries T${next}</th><th>Consumption/tick</th><th>Empty seats (x225VB)</th></tr>
+        <tr><td class="n">${salaryBill.toLocaleString("en-IN")} VB</td><td>${esc(tierTxt) || "N/A"}</td><td class="n">${empty}</td></tr></table>
         <p><b>Loans:</b><br/>${loanTxt}</p><p><b>Contract lines due T${next}:</b><br/>${lineTxt}</p></div>`;
     }).join("");
 
@@ -83,9 +83,9 @@ export async function GET(req: Request) {
     ).join("");
 
     const slips = Array.from({ length: 6 }, (_, i) => `<div class="slip">
-      <b>TRADE SLIP ${i + 1}</b> — Tick ___ Date ___ Form no ___
+      <b>TRADE SLIP ${i + 1}</b> - Tick ___ Date ___ Form no ___
       <br/>Seller ___ pays/delivers ___ to Buyer ___ : ___ units of ___ @ ___ = ___ VB.
-      <br/>Signatures: ____________ / ____________ Desk: ___ Entered to platform: ☐
+      <br/>Signatures: ____________ / ____________ Desk: ___ Entered to platform: [ ]
     </div>`).join("");
 
     const html = `<!doctype html><html><head><title>Paper runbook tick ${tick}</title><style>
@@ -100,17 +100,17 @@ export async function GET(req: Request) {
       ol.check li{margin:4px 0}
       @media print{ body{background:#fff;padding:0} .toolbar{display:none} .page{max-width:none;margin:0} }
     </style></head><body>
-    <div class="toolbar"><button onclick="window.print()">Print runbook</button><span>Generated ${new Date().toISOString()} · covers through tick ${tick} · run tick ${next} from this if the platform is down</span></div>
-    <div class="page"><h1>Venture City — Deputy GM runbook · after tick ${tick}</h1>
-    <h2>1 · Company balances (opening for tick ${next})</h2>
+    <div class="toolbar"><button onclick="window.print()">Print runbook</button><span>Generated ${new Date().toISOString()} - covers through tick ${tick} - run tick ${next} from this if the platform is down</span></div>
+    <div class="page"><h1>Venture City - Deputy GM runbook | after tick ${tick}</h1>
+    <h2>1. Company balances (opening for tick ${next})</h2>
     <table><tr><th>Company</th><th class="n">Cash VB</th>${RES.map((r) => `<th class="n">${r.slice(0, 4)}</th>`).join("")}</tr>${coRows}</table></div>
-    <div class="page"><h2>2 · Tick ${next} work list (in settle order)</h2>${work}
+    <div class="page"><h2>2. Tick ${next} work list (in settle order)</h2>${work}
     <ol class="check"><li>Contracts: deliveries first, then payments; missed = penalty + breach mark, two breaches ends the contract.</li>
     <li>Salaries: pay the bill above; unpaid becomes arrears.</li><li>Consumption: deduct each resource by its tier rate (floored at 0).</li>
     <li>Loans: collect instalments marked DUE; missed twice = default.</li><li>Seats: charge 225 VB per empty seat.</li></ol></div>
-    <div class="page"><h2>3 · Journal (latest ${journal.length} lines, newest last)</h2>
+    <div class="page"><h2>3. Journal (latest ${journal.length} lines, newest last)</h2>
     <table><tr><th>Tick</th><th>Tx</th><th>Account</th><th>Asset</th><th class="n">Amt</th><th>Kind</th></tr>${jrows}</table></div>
-    <div class="page"><h2>4 · Blank trade slips</h2>${slips}</div>
+    <div class="page"><h2>4. Blank trade slips</h2>${slips}</div>
     </body></html>`;
     return new Response(html, { headers: { "content-type": "text/html", "Content-Disposition": "inline" } });
   } catch (e) {
