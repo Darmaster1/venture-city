@@ -39,6 +39,26 @@ const FEATURE_TOGGLES = [
   { key: "event_crisis_deck", enabled: false, description: "Release event-crisis cards into the live deck." }
 ];
 
+async function seedDayTwo() {
+  for (const lane of LANES) await prisma.lane.upsert({ where: { code: lane.code }, create: lane, update: lane });
+  for (const toggle of FEATURE_TOGGLES) await prisma.featureToggle.upsert({ where: { key: toggle.key }, create: toggle, update: { description: toggle.description } });
+  const crisisCsv = readFileSync(join(process.cwd(), "data", "event-crisis.csv"), "utf8").trim();
+  for (const line of crisisCsv.split(/\r?\n/).slice(1)) {
+    const [code, kind, title, tick, copy] = line.split(",");
+    if (code) await prisma.eventCrisisCard.upsert({ where: { code }, create: { code, kind, title, tick: Number(tick), payload: { copy } }, update: { kind, title, tick: Number(tick), payload: { copy } } });
+  }
+  const companies = await prisma.company.findMany({ where: { active: true }, orderBy: { id: "asc" }, select: { id: true } });
+  for (const company of companies) {
+    const firstParticipant = await prisma.participant.findFirst({ where: { companyId: company.id }, orderBy: { createdAt: "asc" } });
+    if (firstParticipant) await prisma.participant.update({ where: { id: firstParticipant.id }, data: { isSignatory: true } });
+  }
+  await prisma.volunteer.upsert({ where: { id: "gm-1" }, create: { id: "gm-1", name: "Game Master", role: "GM", loginSecretHash: hashSecret(process.env.GM_BOOTSTRAP_SECRET ?? "gm-admin-001"), createdBy: "seed" }, update: {} });
+  for (let i = 2; i <= 5; i++) {
+    const id = `gm-${i}`;
+    await prisma.volunteer.upsert({ where: { id }, create: { id, name: `GM Console ${i}`, role: "GM", loginSecretHash: hashSecret(process.env[`GM_ACCOUNT_${i}_SECRET`] ?? `gm-admin-00${i}`), createdBy: "seed" }, update: {} });
+  }
+}
+
 async function acct(ownerType: string, ownerId: string, label: string) {
   return prisma.account.upsert({
     where: { ownerType_ownerId_label: { ownerType, ownerId, label } },
@@ -49,7 +69,7 @@ async function acct(ownerType: string, ownerId: string, label: string) {
 
 export async function seed() {
   const existing = await prisma.company.count();
-  if (existing > 0 && !process.env.FORCE_SEED) { console.log("Seed skipped: companies exist. Set FORCE_SEED=1 to reseed."); return; }
+  if (existing > 0 && !process.env.FORCE_SEED) { await seedDayTwo(); console.log("Day 2 seed complete: existing game data preserved."); return; }
   if (process.env.FORCE_SEED) {
     const tables = ["dealSignature","dealSheet","featureToggle","lane","journalEntry","transaction","contractLine","contract","loan","employment","participant","companyTick","companyTier","requiredSeat","productCard","notableAsset","account","customerCard","supplierLine","licence","grant","tender","mediaProduct","missionCard","opportunityCard","objectiveTemplate","infoCard","eventCrisisCard","bankProduct","investorProduct","run","tick","settlementLock","resource"];
     for (const t of tables) { try { await (prisma as unknown as Record<string, { deleteMany: () => Promise<unknown> }>)[t]?.deleteMany(); } catch {} }

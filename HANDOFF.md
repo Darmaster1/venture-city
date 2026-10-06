@@ -102,6 +102,7 @@ Implemented and wired:
 15. `npm run e2e` collected Vitest unit tests because Playwright had no test filter. The script now targets `tests-e2e.spec.ts` and includes a reusable `playwright.config.ts` with local `baseURL` and `webServer` settings.
 16. The Bank smoke test matched a hidden navigation-menu link named `Bank`, producing a false positive. It now verifies the intended unauthenticated redirect to `/login`.
 17. Bank server-render failures previously replaced the entire desk with an error page. The desk now renders a clear unavailable-state alert while preserving its layout.
+18. `db:seed` exited immediately when any companies existed, so deploying Day 2 to an existing database never created lanes, signatories, or the extra GM accounts. Existing databases now receive a non-destructive Day 2 backfill while preserving current game state.
 
 ## 9. Latest Verification
 
