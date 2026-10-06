@@ -27,7 +27,7 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 
 ---
 
-## 3. Database State (Production) — VERIFIED 2026-10-06 15:47 UTC
+## 3. Database State (Production) — VERIFIED 2026-10-06 16:50 UTC
 
 - **Current tick**: 0 (clean T0, ready for event)
 - **Clock**: PRE
@@ -38,36 +38,31 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 
 ---
 
-## 4. Recent Fixes & Additions (2026-10-06)
+## 4. Root Cause of Build Issue & Fix (Commit 0d487db)
 
-1. **WebGL Animations on GM and Board Pages**:
-   - Added `CursorRingField` background to `app/board/page.tsx` and `app/gm/page.tsx` heroes so particle animation now renders on both the Board and GM console.
+- **Issue**: Adding the `onClick` event handler to the `Logout` button inside `Navbar()` in `src/components/chrome.tsx` caused Next.js server component prerendering to throw: `"Event handlers cannot be passed to Client Component props"`.
+- **Fix**: Added `"use client";` directive at the top of `src/components/chrome.tsx`.
+- **Verification**: Ran production Next.js build locally (`npx next build`). Build succeeded cleanly (all 39 routes generated without errors).
 
-2. **Global Logout Button**:
-   - Added `/api/auth/logout` API route and integrated a **Logout** button in `Navbar` (`src/components/chrome.tsx`) that clears authentication cookies and redirects to `/login`.
+---
+
+## 5. Summary of Recent Features
+
+1. **WebGL Canvas Animations Everywhere**:
+   - Integrated `CursorRingField` in `PageHero` across all desk pages, as well as `app/board/page.tsx` and `app/gm/page.tsx`.
+
+2. **Logout Button**:
+   - `/api/auth/logout` route added + Logout button in `Navbar`.
 
 3. **Copy Link Option for GM Impersonation**:
-   - Added **Copy Link** buttons to both `CrewTable` and `ParticipantChecks` in `app/gm/page.tsx`. GMs can copy individual volunteer or participant login URLs to open them in Incognito/private windows without logging out the GM session.
-
-4. **Paper Export Cleaning**:
-   - Cleaned symbols in `app/api/paper-export/route.ts` replacing non-ASCII symbols with plain ASCII (`|`, `->`, `[ ]`).
-
-5. **Strict GM Route Access**:
-   - Updated `middleware.ts` to restrict `/gm` and `/api/gm` to `GM`, `DEPUTY_GM`, or `TECH_LEAD` roles.
+   - Added **Copy Link** buttons for Crew and Participant checks in GM console (`app/gm/page.tsx`) to open desk sessions in Incognito tabs without logging out GM session.
 
 ---
 
-## 5. Verification Commands
+## 6. Verification Commands
 
 ```bash
+npx next build       # Production build (PASSED - 39/39 static & dynamic routes compiled)
 npx tsc --noEmit     # TypeScript strict check (PASSED 0 errors)
-npx vitest run       # Unit test suite (PASSED 12/12)
-git status           # Clean working tree, pushed commit 70e6233 to origin/main
+git status           # Clean working tree, pushed commit 0d487db to origin/main
 ```
-
----
-
-## 6. Git State
-
-- **Repo**: https://github.com/Darmaster1/venture-city
-- **Branch**: `main` (pushed commit `70e6233`)
