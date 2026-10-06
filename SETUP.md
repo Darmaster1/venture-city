@@ -36,7 +36,7 @@ Step 4 — Seed the event data
 ```
 npm run db:seed
 ```
-This creates the run, 10 companies with opening cash and 60 resource units each, anchor contracts, 80 participants, customer/supplier/licence/grant/tender/media/mission/opportunity/objective/info rows, and a GM volunteer. Check: `npm run dev`, open http://localhost:3000/board, confirm the ten companies appear.
+This creates the run, 10 companies with formula-based opening cash and 100 units of each resource, an 11-tick spine, anchor contracts, 80 participants, the structured 26-event/20-crisis catalogue, customer/supplier/licence/grant/tender/media/mission/opportunity/objective/info rows, and a GM volunteer. Check: `npm run dev`, open http://localhost:3000/board, confirm the ten companies appear.
 
 Step 5 — Create the first GM account
 The seed already created volunteer `gm-1` using your `GM_BOOTSTRAP_SECRET` as its secret. Log in at http://localhost:3000/login under Volunteers with id `gm-1` and that secret. To create another GM later, POST to `/api/auth` with `{"createGM":true,"bootstrapSecret":"<GM_BOOTSTRAP_SECRET>","name":"Deputy","secret":"<new-secret>"}`.

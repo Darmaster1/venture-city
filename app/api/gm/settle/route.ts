@@ -20,11 +20,13 @@ export async function POST(req: Request) {
   if (!run) return Response.json({ error: "No run." }, { status: 400 });
   if (run.clockState === "FINAL_FROZEN")
     return Response.json({ error: "City is frozen." }, { status: 409 });
+  if (!["RUNNING", "FROZEN_FOR_SETTLEMENT"].includes(run.clockState))
+    return Response.json({ error: `Settlement unavailable while clock is ${run.clockState}.` }, { status: 409 });
   // FROZEN_FOR_SETTLEMENT means a previous attempt died mid-way: fall
   // through and resume it. Per-op idempotency keys make resume safe, and
   // the lock table still refuses a genuinely concurrent second settle.
   const next = run.currentTick + 1;
-  if (next > 10) return Response.json({ error: "Event complete." }, { status: 400 });
+  if (next >= run.tickCount) return Response.json({ error: "Event settlement complete; run the final freeze." }, { status: 400 });
   try {
     const { log, ms } = await settleTick(next, v.id);
     return Response.json({ ok: true, tick: next, ms, log, server_time: new Date().toISOString() });

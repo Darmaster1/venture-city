@@ -11,20 +11,23 @@ export async function GET() {
   const ticks = await prisma.companyTick.findMany({ where: { tick: run?.currentTick ?? 0 } });
   const rvOf = new Map(ticks.map((t) => [t.companyId, t.rv]));
   const resources = await prisma.resource.findMany();
-  const [lanes, deals] = await Promise.all([
+  const [lanes, deals, events] = await Promise.all([
     prisma.lane.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" }, select: { code: true, name: true, desk: true } }),
-    prisma.dealSheet.findMany({ where: { state: { in: ["SENT_FOR_SIGNATURES", "SIGNED"] } }, orderBy: { createdAt: "desc" }, take: 12, select: { code: true, lane: true, sellerId: true, buyerId: true, state: true } })
+    prisma.dealSheet.findMany({ where: { state: { in: ["SENT_FOR_SIGNATURES", "SIGNED"] } }, orderBy: { createdAt: "desc" }, take: 12, select: { code: true, lane: true, sellerId: true, buyerId: true, state: true } }),
+    prisma.eventCrisisCard.findMany({ where: { state: "FIRED" }, orderBy: { tick: "desc" }, take: 8, select: { code: true, kind: true, title: true, tick: true, visibility: true } })
   ]);
   const server_time = new Date().toISOString();
   return Response.json({
     server_time,
     tick: run?.currentTick ?? 0,
+    totalTicks: run?.tickCount ?? 11,
     clock: run?.clockState ?? "PRE",
     infoMode: run?.infoMode ?? "CLOSED",
     companies: companies.map((c) => publicCompanyLine({ id: c.id, name: c.name, lifecycle: c.lifecycle, rv: rvOf.get(c.id) ?? c.baselineRv ?? undefined })),
     bankBase: Object.fromEntries(resources.map((r) => [r.code, r.bankBasePrice])),
     lanes,
-    activeDeals: deals.map((deal) => ({ code: deal.code, lane: deal.lane, parties: `${deal.sellerId} → ${deal.buyerId}`, state: deal.state }))
+    activeDeals: deals.map((deal) => ({ code: deal.code, lane: deal.lane, parties: `${deal.sellerId} → ${deal.buyerId}`, state: deal.state })),
+    events: events.filter((event) => event.visibility === "PUBLIC").map((event) => ({ code: event.code, kind: event.kind, title: event.title, tick: event.tick }))
   });
   } catch {
     return Response.json({ error: "City feed is temporarily unavailable." }, { status: 503 });

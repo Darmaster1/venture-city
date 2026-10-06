@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Navbar, Footer, Stat, CoDot, HeroOrbs, HamsterLoader } from "@/src/components/chrome";
 import CursorRingField from "@/src/components/cursor-ring-field";
 
-type Board = { tick: number; clock: string; infoMode: string; server_time: string; companies: { id: string; name: string; lifecycle: string; rv: number | null }[]; bankBase: Record<string, number>; lanes: { code: string; name: string; desk: string }[]; activeDeals: { code: string; lane: string; parties: string; state: string }[] };
+type Board = { tick: number; totalTicks: number; clock: string; infoMode: string; server_time: string; companies: { id: string; name: string; lifecycle: string; rv: number | null }[]; bankBase: Record<string, number>; lanes: { code: string; name: string; desk: string }[]; activeDeals: { code: string; lane: string; parties: string; state: string }[]; events: { code: string; kind: string; title: string; tick: number }[] };
 const RES_COLORS: Record<string, string> = { COMPUTE: "#6C3DF4", ENERGY: "#FFB020", LOGISTICS: "#0E9FD8", MATERIALS: "#C25E2B", DATA: "#E84FB8", INFRA: "#2F855A" };
 const CLOCK_FRIENDLY: Record<string, string> = {
   PRE: "Warming up",
@@ -41,7 +41,7 @@ export default function BoardPage() {
           <HeroOrbs />
           <div className="hero-content">
             <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}><span className="live-dot" />Live | {b?.infoMode ?? ""} | {b && CLOCK_FRIENDLY[b.clock] ? CLOCK_FRIENDLY[b.clock] : (b?.clock ?? "")}</div>
-            <h1 style={{ fontSize: 48 }}>Tick {b?.tick ?? "-"} of 10</h1>
+            <h1 style={{ fontSize: 48 }}>Tick {b?.tick ?? "-"} of {b?.totalTicks ?? 11}</h1>
             <p>{b && CLOCK_BLURB[b.clock] ? CLOCK_BLURB[b.clock] : "Connecting to the city feed."}</p>
             {err && <p className="alert-error" style={{ background: "rgba(0,0,0,0.35)", borderColor: "rgba(255,255,255,0.4)", color: "#fff" }}>{err} <button className="btn btn-light" onClick={load} style={{ marginLeft: 8, minHeight: 32 }}>Retry</button></p>}
           </div>
@@ -76,6 +76,7 @@ export default function BoardPage() {
           <div className="card"><div className="label">City lanes</div><table className="vc"><thead><tr><th>Lane</th><th>Desk</th></tr></thead><tbody>{(b?.lanes ?? []).map((lane) => <tr key={lane.code}><td><b>{lane.name}</b></td><td>{lane.desk}</td></tr>)}</tbody></table></div>
           <div className="card"><div className="label">Signed activity</div><table className="vc"><thead><tr><th>Deal</th><th>Parties</th><th>State</th></tr></thead><tbody>{(b?.activeDeals ?? []).length ? b?.activeDeals.map((deal) => <tr key={deal.code}><td className="mono">{deal.code}</td><td>{deal.parties}</td><td><span className="badge info">{deal.state}</span></td></tr>) : <tr><td colSpan={3}>No public Deal Sheet activity yet.</td></tr>}</tbody></table></div>
         </div>
+        <div className="card"><div className="label">Public event feed</div><table className="vc"><thead><tr><th>Tick</th><th>Code</th><th>Kind</th><th>Event</th></tr></thead><tbody>{(b?.events ?? []).length ? b?.events.map((event) => <tr key={`${event.code}-${event.tick}`}><td className="num">T{event.tick}</td><td className="mono">{event.code}</td><td>{event.kind}</td><td>{event.title}</td></tr>) : <tr><td colSpan={4}>No public events have fired.</td></tr>}</tbody></table></div>
       </div>
       <Footer />
     </div>

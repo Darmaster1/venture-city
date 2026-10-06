@@ -1,0 +1,12 @@
+ALTER TABLE "OpportunityCard"
+  ADD COLUMN "type" TEXT NOT NULL DEFAULT 'AFTERMATH',
+  ADD COLUMN "signal" TEXT,
+  ADD COLUMN "detail" TEXT,
+  ADD COLUMN "discoveryPaths" JSONB,
+  ADD COLUMN "claimMethod" TEXT NOT NULL DEFAULT 'FIRST_COMMIT',
+  ADD COLUMN "tradeOff" TEXT,
+  ADD COLUMN "valueCap" INTEGER,
+  ADD COLUMN "window" INTEGER,
+  ADD COLUMN "decayRule" TEXT,
+  ADD COLUMN "institutions" JSONB,
+  ADD COLUMN "visibility" TEXT NOT NULL DEFAULT 'PUBLIC';

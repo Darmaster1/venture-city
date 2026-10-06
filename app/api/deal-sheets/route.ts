@@ -34,7 +34,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const session = await sessionFrom(req);
-  if (!session || session.kind !== "volunteer" || !canUseDesk(session)) return Response.json({ error: "Desk or GM login required." }, { status: 403 });
+  if (!session || (session.kind === "volunteer" && !canUseDesk(session))) return Response.json({ error: "Login required." }, { status: 403 });
   const body = await req.json().catch(() => ({}));
   const sellerId = String(body.sellerId ?? "");
   const buyerId = String(body.buyerId ?? "");
@@ -50,6 +50,10 @@ export async function POST(req: Request) {
   if (pricePerUnit < floorPrice) return Response.json({ error: "Price is below the declared floor price." }, { status: 400 });
   if (floorPrice < 0 || startTick < 1 || endTick < startTick || endTick > 10) return Response.json({ error: "Invalid floor price or tick window." }, { status: 400 });
   if (signerIds.length !== 2 || new Set(signerIds).size !== 2) return Response.json({ error: "Exactly two distinct signatories are required." }, { status: 400 });
+  if (session.kind === "participant") {
+    const proposer = await prisma.participant.findUnique({ where: { id: session.pid }, select: { companyId: true } });
+    if (!proposer?.companyId || proposer.companyId !== sellerId) return Response.json({ error: "You can only propose a deal for your own company." }, { status: 403 });
+  }
   const participants = await prisma.participant.findMany({ where: { id: { in: signerIds }, isSignatory: true } });
   const byCompany = new Map(participants.map((participant) => [participant.companyId, participant]));
   if (participants.length !== 2 || !byCompany.has(sellerId) || !byCompany.has(buyerId))
@@ -62,7 +66,7 @@ export async function POST(req: Request) {
       code: `DS-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${randomBytes(3).toString("hex").toUpperCase()}`,
       lane: String(body.lane ?? "TRADE"), type: String(body.type ?? "SPOT"), sellerId, buyerId, product, units,
       pricePerUnit, floorPrice, startTick, endTick, settlement: String(body.settlement ?? "UPFRONT"), state: "SENT_FOR_SIGNATURES",
-      note: body.note ? String(body.note) : undefined, createdBy: session.vid, sentAt: new Date()
+      note: body.note ? String(body.note) : undefined, createdBy: session.kind === "participant" ? session.pid : session.vid, sentAt: new Date()
     }
   });
   await prisma.dealSignature.createMany({ data: participants.map((participant) => ({ dealSheetId: sheet.id, signerId: participant.id, companyId: participant.companyId!, role: "SIGNATORY" })) });

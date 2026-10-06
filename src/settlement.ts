@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "./db";
+import { fireTickEvents } from "./events";
 import { TIER_RATES, SALARY_LADDER, DEFICIT_CHARGE, STORAGE_CAP, BANK_BASE, nav, rv, creditGrade, runway } from "./formulas";
 import { pct } from "./rounding";
 
@@ -132,7 +133,7 @@ export async function releaseLock(): Promise<void> {
 
 export async function snapshot(tick: number, phase: string, by = "system"): Promise<void> {
   const count = await prisma.journalEntry.count({ where: { tick: { lte: tick } } });
-  const sample = await prisma.journalEntry.findMany({ where: { tick: { lte: tick } }, orderBy: { postedAt: "desc" }, take: 500 });
+  const sample = await prisma.journalEntry.findMany({ where: { tick: { lte: tick } }, orderBy: { postedAt: "desc" }, take: 500, select: { id: true, txId: true, tick: true, postedAt: true, accountId: true, asset: true, amount: true, kind: true, refType: true, refId: true, enteredBy: true, stepNo: true } });
   const payload = { tick, phase, count, sample };
   const json = JSON.stringify(payload);
   if (json.length > 1_000_000) {
@@ -186,6 +187,10 @@ export async function settleTick(tick: number, by: string): Promise<{ log: StepL
 
     if (!skip("snap-pre")) { await snapshot(tick, "pre", by); await markDone(tick, "snap-pre"); }
     log.push(`snapshot pre tick ${tick}`);
+    if (!skip("events")) {
+      log.push(...await fireTickEvents(tick, by));
+      await markDone(tick, "events");
+    }
 
     // Step 2: contracts
     if (!skip("contracts")) {
@@ -343,18 +348,21 @@ export async function settleTick(tick: number, by: string): Promise<{ log: StepL
 
     // Step 8: lifecycle
     if (!skip("lifecycle")) {
-      for (const cc of companies) {
+      const defaultedLoans = await prisma.loan.findMany({ where: { borrowerCompany: { in: cids }, state: "DEFAULTED" }, select: { borrowerCompany: true } });
+      const defaultedCompanies = new Set(defaultedLoans.map((loan) => loan.borrowerCompany));
+      const staffByCompany = new Map<string, number>();
+      for (const employee of emps) staffByCompany.set(employee.companyId, (staffByCompany.get(employee.companyId) ?? 0) + 1);
+      await Promise.all(companies.map(async (cc) => {
         const cash = bals.get(bkey(acc("COMPANY", cc.id, "VB"), "VB")) ?? 0;
-        const staff = emps.filter((e) => e.companyId === cc.id).length;
-        const badLoan = await prisma.loan.findFirst({ where: { borrowerCompany: cc.id, state: "DEFAULTED" } });
-        const distressed = cash < 0 || staff < 3 || !!badLoan;
+        const staff = staffByCompany.get(cc.id) ?? 0;
+        const distressed = cash < 0 || staff < 3 || defaultedCompanies.has(cc.id);
         await prisma.company.update({
           where: { id: cc.id },
           data: distressed
             ? { lifecycle: "DISTRESSED", distressedSinceTick: cc.distressedSinceTick ?? tick }
             : { lifecycle: "OPERATING", distressedSinceTick: null }
         });
-      }
+      }));
       await markDone(tick, "lifecycle");
       log.push("step8 lifecycle done");
     } else log.push("step8 lifecycle: already done");
@@ -391,13 +399,11 @@ export async function settleTick(tick: number, by: string): Promise<{ log: StepL
         rows.push({ id: cc.id, cash, n, rvv: rv(n, 0) });
       }
       await bulkPost(tick, decayOps);
-      for (const r of rows) {
-        await prisma.companyTick.upsert({
+      await Promise.all(rows.map((r) => prisma.companyTick.upsert({
           where: { companyId_tick: { companyId: r.id, tick } },
           create: { companyId: r.id, tick, cash: r.cash, nav: r.n, rv: r.rvv, creditGrade: creditGrade({ completed: 0, missLast3: false, bankDebt: 0, inDefault: false, distressed: r.cash < 0 }), runway: runway(r.cash, 1000) },
           update: { cash: r.cash, nav: r.n, rv: r.rvv }
-        });
-      }
+        })));
       await markDone(tick, "market");
       log.push("step10 market done");
     } else log.push("step10 market: already done");

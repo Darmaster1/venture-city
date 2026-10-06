@@ -117,3 +117,56 @@ npm run t0:audit          # BLOCKED — local .env Neon credentials rejected
 ```
 
 The local audit could not connect to `ep-ancient-boat-b36ymcbp-pooler.c-4.ap-southeast-1.aws.neon.tech` because the configured credentials were rejected. No production database state was changed during this pass. The repository still does not contain the GM Handbook, so handbook-number reconciliation remains pending that source document and valid database credentials.
+
+---
+
+## 10. Authoritative Spec Review — 2026-10-06
+
+The parsed source documents are now available and are authoritative for future implementation work: Technology Platform Specification v2, Dynamic Events & Crisis System, Investor Day Playbook / Final Scoring / Post-Event Reports, Company Passport Packs and Role Cards, Core Game Systems, Event Operations Manual, GM Handbook, Human Internet and Information Economy, Institution Operating Content, Personal Objective System, Starting Companies Master Catalogue, Starting World Master Design, and Participant Handbook.
+
+Locked City 10 run parameters:
+
+- 11-tick spine; Market Open 10:35; lunch pause 12:35–13:05; final freeze after Tick 10 and final build at Tick 11; Investor Day 16:25 in two rooms.
+- Six resources start at 100 units per company. Bank T1 stock is `40 × N = 400` per resource and restock is `10 × N = 100` per tick.
+- Starting cash is `headcount × 2,450 + 10,000 + strategic adjustment`.
+- Each company elects two authorised signatories. T0 cap table is 800 Founding Holder shares plus 200 option-pool shares.
+- Tier consumption is Low/Medium/High/Very High = `4/7/10/14`; thresholds are 30 warning, 15 delivery surcharge, and 0 delivery stop.
+- Bank base prices are Compute 20, Energy 15, Logistics 20, Materials 15, Data 25, Infrastructure 30 VB.
+- The platform is the sole source of truth; paper is only a fallback route.
+
+Current implementation gaps against the authoritative documents:
+
+1. Seeded company stock is still 60 units instead of the required 100.
+2. Existing-company backfill marks one signatory per company; the spec requires two elected signatories.
+3. Company cash is loaded from static City 10 JSON values instead of recalculated from registration headcount.
+4. The original event/crisis CSV was only a small E01–E08 placeholder; the implementation now has the structured 26-event/20-crisis catalogue, with richer card metadata and deck selection. Full desk-specific parameter mutations and every response route remain an expansion beyond the generic firing engine.
+5. O21–O28 currently contain only minimal title/value/method data; the spec requires signal, detail, discovery paths, claim method, trade-off, cap, window, decay, institutions, visibility and register state.
+6. Deal Sheets currently cover only a partial company trade flow; the spec requires all parties, consideration, timing, duration, conditions, penalties, evidence, negotiator credit, signatures, lifecycle and atomic settlement paths.
+7. Institution catalogues and desk actions are incomplete compared with the required Bank, Investor, Customer, Supplier, Logistics, Government, Media and Talent operating content.
+8. Tier B and C systems are not implemented: full missions, opportunities, personal objectives, auctions, information cards, crisis exposure, Founder Ledger, Investor Day snapshots/scoring, City Net, People Directory, messaging, M&A and new-venture flows.
+9. Visibility classes from the source documents are only partially enforced; hidden objectives, levers, vulnerabilities, truth status and observer separation require a dedicated policy audit.
+
+The current production/Neon backfill audit proves the Day 2 seed additions are present, but it does not prove full source-spec compliance. Future changes should be tracked against this gap list rather than treating the existing `ok` result as a complete handbook audit.
+
+## 11. Event Workflow Implementation — 2026-10-06
+
+Implemented in the repository:
+
+- Added migration `20261006190000_event_workflow` for event phases, signal timing, response windows, targeting metadata, deck firing timestamps, signal indexes, and crisis-hit state.
+- Added `src/events.ts`: one-tick-ahead signal release, idempotent card firing, deck entries, crisis-hit records, and audit records.
+- Added `/api/gm/clock` for Market Open, lunch pause/resume, pause/resume, and final freeze. Final freeze requires the configured 11-tick spine and creates a final snapshot.
+- Settlement now runs event firing before financial settlement and records the event step for resume safety.
+- Added GM clock controls and event/deck/crisis registers through the GM control API.
+- Added public fired events to the City Board and participant-scoped signals/crisis status to the portal.
+- Fresh and safe seed paths now use formula-based opening cash, 100 opening units per resource, two signatories per company, enabled event deck, signal ticks, and claimable mission instances.
+- Settlement rejects attempts outside the RUNNING or resume states; legacy freeze now pauses unless explicitly marked final.
+
+Remaining source-content work: opportunity cards and desk-specific event mutations still need the full content-level expansion from the source documents. The structured E/C catalogue is now in `data/event-cards.json`; the legacy CSV remains only for compatibility. Apply the new migrations with `npx prisma migrate deploy` before running the safe seed/backfill; do not use `FORCE_SEED=1` on an active run.
+
+The authoritative event index has now been transcribed as 26 events and 20 crises. The default deck is armed in seed state, while the remaining library cards use `LIBRARY` state for GM selection. The run length is configurable and defaults to 11 ticks, with Tick 10 as the final crisis slot and Tick 11 as final build/freeze preparation.
+
+New migrations after the Day 2 desk migration:
+
+- `20261006190000_event_workflow`
+- `20261006193000_run_tick_count`
+- `20261006200000_opportunity_register`

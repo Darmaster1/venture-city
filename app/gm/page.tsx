@@ -33,6 +33,7 @@ export default function GMPage() {
         <div style={{ margin: "-10px 0 16px" }}>
           <button className="btn btn-danger" onClick={settle} disabled={busy} style={{ height: 48, padding: "0 28px", fontSize: 16 }}>{busy ? "Settling..." : "Settle tick"}</button>
         </div>
+        <ClockControls onMessage={setMsg} />
         <div className="card" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <span className="label">City controls</span>
           <button className="btn" onClick={() => freeze(true)}>Freeze the city</button>
@@ -80,6 +81,15 @@ export default function GMPage() {
       <Footer />
     </div>
   );
+}
+
+function ClockControls({ onMessage }: { onMessage: (message: string) => void }) {
+  async function transition(action: string) {
+    const response = await fetch("/api/gm/clock", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action }) });
+    const json = await response.json();
+    onMessage(response.ok ? `Clock: ${json.clockState} · information: ${json.infoMode}` : (json.error ?? "Clock action failed."));
+  }
+  return <div className="card" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><span className="label">Event clock</span><button className="btn" onClick={() => transition("market_open")}>Market Open</button><button className="btn" onClick={() => transition("lunch_start")}>Lunch pause</button><button className="btn" onClick={() => transition("lunch_end")}>Resume after lunch</button><button className="btn" onClick={() => transition("pause")}>Pause</button><button className="btn btn-danger" onClick={() => transition("final_freeze")}>Final freeze</button></div>;
 }
 
 function CrewTable() {

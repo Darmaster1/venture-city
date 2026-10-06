@@ -12,8 +12,7 @@ import opps from "../data/opportunity-templates.json";
 import objectives from "../data/objective-templates.json";
 import infocards from "../data/info-cards.json";
 import bankprods from "../data/bank-products.json";
-import { readFileSync } from "fs";
-import { join } from "path";
+import eventCards from "../data/event-cards.json";
 
 const RESOURCES = [
   { code: "COMPUTE", bankBasePrice: 20, bankStockT1: 400, restockPerTick: 100 },
@@ -36,21 +35,40 @@ const FEATURE_TOGGLES = [
   { key: "deal_sheets", enabled: true, description: "Enable floor-checked Deal Sheets and signature workflow." },
   { key: "station_dashboard", enabled: true, description: "Show lane and Deal Sheet status on company stations." },
   { key: "city_board_live", enabled: true, description: "Show the live public City Board feed." },
-  { key: "event_crisis_deck", enabled: false, description: "Release event-crisis cards into the live deck." }
+  { key: "event_crisis_deck", enabled: true, description: "Release event-crisis cards into the live deck." }
 ];
+
+const DEFAULT_EVENT_CODES = new Set(["E22", "E01", "E04", "E13", "E20", "E08", "E03", "E32", "C01", "C06", "C07", "C12", "C17", "C20"]);
+
+async function seedEventCards() {
+  for (const card of eventCards as Array<Record<string, unknown>>) {
+    const code = String(card.code);
+    const data = { kind: String(card.kind), title: String(card.title), tick: Number(card.tick), signalTick: card.signalTick == null ? undefined : Number(card.signalTick), phase: String(card.stage ?? "MARKET"), targetRule: String(card.targetRule ?? ""), visibility: String(card.visibility ?? "PUBLIC"), payload: card as object };
+    await prisma.eventCrisisCard.upsert({ where: { code }, create: { code, ...data, state: DEFAULT_EVENT_CODES.has(code) ? "QUEUED" : "LIBRARY" }, update: data });
+  }
+}
 
 async function seedDayTwo() {
   for (const lane of LANES) await prisma.lane.upsert({ where: { code: lane.code }, create: lane, update: lane });
   for (const toggle of FEATURE_TOGGLES) await prisma.featureToggle.upsert({ where: { key: toggle.key }, create: toggle, update: { description: toggle.description } });
-  const crisisCsv = readFileSync(join(process.cwd(), "data", "event-crisis.csv"), "utf8").trim();
-  for (const line of crisisCsv.split(/\r?\n/).slice(1)) {
-    const [code, kind, title, tick, copy] = line.split(",");
-    if (code) await prisma.eventCrisisCard.upsert({ where: { code }, create: { code, kind, title, tick: Number(tick), payload: { copy } }, update: { kind, title, tick: Number(tick), payload: { copy } } });
+  await seedEventCards();
+  for (const mission of missions as Array<Record<string, unknown>>) {
+    const code = String(mission.code);
+    await prisma.missionCard.upsert({ where: { code }, create: { code, title: String(mission.title), tier: Number(mission.tier ?? 1), reward: Number(mission.reward ?? 500), flags: mission as object }, update: {} });
+    const exists = await prisma.missionInstance.findFirst({ where: { missionId: code, tick: 1 } });
+    if (!exists) await prisma.missionInstance.create({ data: { missionId: code, tick: 1, state: "OPEN" } });
+  }
+  for (const opportunity of opps as Array<Record<string, unknown>>) {
+    const code = String(opportunity.code);
+    await prisma.opportunityCard.upsert({ where: { code }, create: { code, title: String(opportunity.title), value: Number(opportunity.value ?? 1000), method: String(opportunity.method ?? "FIRST_COMMIT"), payload: opportunity as object }, update: { title: String(opportunity.title), value: Number(opportunity.value ?? 1000), payload: opportunity as object } });
+    const exists = await prisma.opportunityInstance.findFirst({ where: { oppId: code, tick: 1 } });
+    if (!exists) await prisma.opportunityInstance.create({ data: { oppId: code, tick: 1, state: "LIVE" } });
   }
   const companies = await prisma.company.findMany({ where: { active: true }, orderBy: { id: "asc" }, select: { id: true } });
   for (const company of companies) {
-    const firstParticipant = await prisma.participant.findFirst({ where: { companyId: company.id }, orderBy: { createdAt: "asc" } });
-    if (firstParticipant) await prisma.participant.update({ where: { id: firstParticipant.id }, data: { isSignatory: true } });
+    const signatories = await prisma.participant.findMany({ where: { companyId: company.id }, orderBy: { createdAt: "asc" }, take: 2, select: { id: true } });
+    await prisma.participant.updateMany({ where: { companyId: company.id }, data: { isSignatory: false } });
+    if (signatories.length) await prisma.participant.updateMany({ where: { id: { in: signatories.map((participant) => participant.id) } }, data: { isSignatory: true } });
   }
   await prisma.volunteer.upsert({ where: { id: "gm-1" }, create: { id: "gm-1", name: "Game Master", role: "GM", loginSecretHash: hashSecret(process.env.GM_BOOTSTRAP_SECRET ?? "gm-admin-001"), createdBy: "seed" }, update: {} });
   for (let i = 2; i <= 5; i++) {
@@ -76,8 +94,8 @@ export async function seed() {
   }
   await prisma.settlementLock.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
   for (const r of RESOURCES) await prisma.resource.upsert({ where: { code: r.code }, create: { ...r, bankStock: r.bankStockT1 }, update: { bankBasePrice: r.bankBasePrice, bankStock: r.bankStockT1 } });
-  await prisma.run.create({ data: { date: new Date(), rulesVersion: "1.0.0", contentVersion: "1.0.0", appVersion: "1.0.0", activeSet: "CITY10", N: 10, P: 80, infoMode: "CLOSED", currentTick: 0, clockState: "PRE", createdBy: "seed" } });
-  for (let k = 0; k <= 10; k++) await prisma.tick.upsert({ where: { tickNo: k }, create: { tickNo: k }, update: {} });
+  await prisma.run.create({ data: { date: new Date(), rulesVersion: "1.0.0", contentVersion: "1.0.0", appVersion: "1.0.0", activeSet: "CITY10", N: 10, P: 80, tickCount: 11, infoMode: "CLOSED", currentTick: 0, clockState: "PRE", createdBy: "seed" } });
+  for (let k = 0; k <= 11; k++) await prisma.tick.upsert({ where: { tickNo: k }, create: { tickNo: k }, update: {} });
   for (const lane of LANES) await prisma.lane.upsert({ where: { code: lane.code }, create: lane, update: lane });
   for (const toggle of FEATURE_TOGGLES) await prisma.featureToggle.upsert({ where: { key: toggle.key }, create: toggle, update: toggle });
 
@@ -95,22 +113,23 @@ export async function seed() {
       await prisma.companyTier.upsert({ where: { companyId_resource_effectiveFromTick: { companyId: c.id, resource: res, effectiveFromTick: 0 } }, create: { companyId: c.id, resource: res, tier, effectiveFromTick: 0 }, update: { tier } });
     await prisma.requiredSeat.upsert({ where: { companyId_domain: { companyId: c.id, domain: c.deficit } }, create: { companyId: c.id, domain: c.deficit, required: 1, fixedAtTick: 0 }, update: {} });
     await prisma.notableAsset.create({ data: { companyId: c.id, type: c.asset, bookValue: c.assetBook } });
-    // Opening cash: RESERVE -> COMPANY VB
+    // Opening cash: headcount x 2,450 + 10,000 + strategic adjustment.
+    const openingCash = 8 * 2450 + 10000 + c.adjust;
     const reserve = await acct("RESERVE", "CITY", "VB");
     const comp = await acct("COMPANY", c.id, "VB");
     const tx = await prisma.transaction.create({ data: { type: "OPENING", status: "SETTLED", proposedTick: 0, createdBy: "seed", idempotencyKey: `opening-${c.id}` } });
     await prisma.journalEntry.createMany({ data: [
-      { txId: tx.id, tick: 0, accountId: reserve.id, asset: "VB", amount: -c.cash, kind: "OPENING", enteredBy: "seed" },
-      { txId: tx.id, tick: 0, accountId: comp.id, asset: "VB", amount: c.cash, kind: "OPENING", enteredBy: "seed" }
+      { txId: tx.id, tick: 0, accountId: reserve.id, asset: "VB", amount: -openingCash, kind: "OPENING", enteredBy: "seed" },
+      { txId: tx.id, tick: 0, accountId: comp.id, asset: "VB", amount: openingCash, kind: "OPENING", enteredBy: "seed" }
     ] });
-    // Starting resource stock 60 each
+    // Starting resource stock 100 each.
     for (const r of RESOURCES) {
       const bank = await acct("RESERVE", "CITY", r.code);
       const ca = await acct("COMPANY", c.id, r.code);
       const t2 = await prisma.transaction.create({ data: { type: "OPENING", status: "SETTLED", proposedTick: 0, createdBy: "seed", idempotencyKey: `opening-${c.id}-${r.code}` } });
       await prisma.journalEntry.createMany({ data: [
-        { txId: t2.id, tick: 0, accountId: bank.id, asset: r.code, amount: -60, kind: "OPENING", enteredBy: "seed" },
-        { txId: t2.id, tick: 0, accountId: ca.id, asset: r.code, amount: 60, kind: "OPENING", enteredBy: "seed" }
+        { txId: t2.id, tick: 0, accountId: bank.id, asset: r.code, amount: -100, kind: "OPENING", enteredBy: "seed" },
+        { txId: t2.id, tick: 0, accountId: ca.id, asset: r.code, amount: 100, kind: "OPENING", enteredBy: "seed" }
       ]});
     }
     // Anchor contract + lines T1-6
@@ -125,7 +144,7 @@ export async function seed() {
       const id = `${c.id}-P${i + 1}`;
       try {
         const domain = i === 0 ? c.deficit : "Operations";
-        const pt = await prisma.participant.create({ data: { id, name: `${c.name} Staff ${i + 1}`, badgeNo: String(badge++), companyId: c.id, domain, level: 0, salary: 100, isSignatory: i === 0, qrToken: newQrToken(), capabilityTags: [], createdBy: "seed" } });
+        const pt = await prisma.participant.create({ data: { id, name: `${c.name} Staff ${i + 1}`, badgeNo: String(badge++), companyId: c.id, domain, level: 0, salary: 100, isSignatory: i < 2, qrToken: newQrToken(), capabilityTags: [], createdBy: "seed" } });
         await prisma.employment.create({ data: { participantId: pt.id, companyId: c.id, role: "staff", domain, level: 0, salary: 100, state: "ACTIVE", startTick: 0 } });
       } catch {}
     }
@@ -142,22 +161,23 @@ export async function seed() {
     await prisma.tender.upsert({ where: { code: String(t.code) }, create: { code: String(t.code), name: String(t.name), value: Number(t.value), requires: t.requires as string | undefined, sector: String(t.sector ?? "Tech and Data"), releaseTick: Number(t.release ?? 3) }, update: {} });
   for (const m of media as Array<Record<string, unknown>>)
     await prisma.mediaProduct.upsert({ where: { code: String(m.code) }, create: { code: String(m.code), name: String(m.name), price: Number(m.price), terms: m as object }, update: {} });
-  for (const m of missions as Array<Record<string, unknown>>)
-    await prisma.missionCard.upsert({ where: { code: String(m.code) }, create: { code: String(m.code), title: String(m.title), tier: Number(m.tier ?? 1), reward: Number(m.reward ?? 500), flags: m as object }, update: {} });
-  for (const o of opps as Array<Record<string, unknown>>)
-    await prisma.opportunityCard.upsert({ where: { code: String(o.code) }, create: { code: String(o.code), title: String(o.title), value: Number(o.value ?? 1000), method: String(o.method ?? "FIRST_COMMIT"), payload: o as object }, update: {} });
+  for (const m of missions as Array<Record<string, unknown>>) {
+    const code = String(m.code);
+    await prisma.missionCard.upsert({ where: { code }, create: { code, title: String(m.title), tier: Number(m.tier ?? 1), reward: Number(m.reward ?? 500), flags: m as object }, update: {} });
+    await prisma.missionInstance.create({ data: { missionId: code, tick: 1, state: "OPEN" } });
+  }
+  for (const o of opps as Array<Record<string, unknown>>) {
+    const code = String(o.code);
+    await prisma.opportunityCard.upsert({ where: { code }, create: { code, title: String(o.title), type: String(o.type ?? "AFTERMATH"), signal: o.signal as string | undefined, detail: o.detail as string | undefined, discoveryPaths: (o.discoveryPaths ?? []) as object, claimMethod: String(o.claimMethod ?? o.method ?? "FIRST_COMMIT"), tradeOff: o.tradeOff as string | undefined, value: Number(o.value ?? 1000), valueCap: o.valueCap == null ? undefined : Number(o.valueCap), window: o.window == null ? undefined : Number(o.window), decayRule: o.decayRule as string | undefined, institutions: (o.institutions ?? []) as object, visibility: String(o.visibility ?? "PUBLIC"), method: String(o.method ?? "FIRST_COMMIT"), payload: o as object }, update: { title: String(o.title), type: String(o.type ?? "AFTERMATH"), claimMethod: String(o.claimMethod ?? o.method ?? "FIRST_COMMIT"), value: Number(o.value ?? 1000), payload: o as object } });
+    await prisma.opportunityInstance.create({ data: { oppId: code, tick: 1, state: "LIVE" } });
+  }
   for (const o of objectives as Array<Record<string, unknown>>)
     await prisma.objectiveTemplate.upsert({ where: { code: String(o.code) }, create: { code: String(o.code), title: String(o.title), text: String(o.text ?? "") }, update: {} });
   for (const ic of infocards as Array<Record<string, unknown>>)
     await prisma.infoCard.upsert({ where: { code: String(ic.code) }, create: { code: String(ic.code), title: String(ic.title), grade: String(ic.grade ?? "C"), copy: String(ic.copy ?? ""), provenance: String(ic.prov ?? "") }, update: {} });
   for (const b of bankprods as Array<Record<string, unknown>>)
     await prisma.bankProduct.upsert({ where: { code: String(b.code) }, create: { code: String(b.code), name: String(b.name), terms: b as object }, update: {} });
-  const crisisCsv = readFileSync(join(process.cwd(), "data", "event-crisis.csv"), "utf8").trim();
-  for (const line of crisisCsv.split(/\r?\n/).slice(1)) {
-    const [code, kind, title, tick, copy] = line.split(",");
-    if (!code) continue;
-    await prisma.eventCrisisCard.upsert({ where: { code }, create: { code, kind, title, tick: Number(tick), payload: { copy } }, update: { kind, title, tick: Number(tick), payload: { copy } } });
-  }
+  await seedEventCards();
   // Seed GM volunteer (secret: gm-admin-001, hashed)
   await prisma.volunteer.upsert({ where: { id: "gm-1" }, create: { id: "gm-1", name: "Game Master", role: "GM", loginSecretHash: hashSecret(process.env.GM_BOOTSTRAP_SECRET ?? "gm-admin-001"), createdBy: "seed" }, update: {} });
   for (let i = 2; i <= 5; i++) {

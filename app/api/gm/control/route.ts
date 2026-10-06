@@ -11,13 +11,16 @@ async function gmFrom(req: Request) {
 export async function GET(req: Request) {
   const session = await gmFrom(req);
   if (!session) return Response.json({ error: "GM login required." }, { status: 403 });
-  const [lanes, toggles, rulings, accounts] = await Promise.all([
+  const [lanes, toggles, rulings, accounts, events, deck, crises] = await Promise.all([
     prisma.lane.findMany({ orderBy: { sortOrder: "asc" } }),
     prisma.featureToggle.findMany({ orderBy: { key: "asc" } }),
     prisma.ruling.findMany({ orderBy: { id: "desc" }, take: 50 }),
-    prisma.volunteer.findMany({ where: { role: { in: ["GM", "DEPUTY_GM", "TECH_LEAD"] } }, select: { id: true, name: true, role: true, deskOrCompany: true } })
+    prisma.volunteer.findMany({ where: { role: { in: ["GM", "DEPUTY_GM", "TECH_LEAD"] } }, select: { id: true, name: true, role: true, deskOrCompany: true } }),
+    prisma.eventCrisisCard.findMany({ orderBy: [{ tick: "asc" }, { code: "asc" }] }),
+    prisma.deckEntry.findMany({ orderBy: { tick: "desc" }, take: 100 }),
+    prisma.crisisHit.findMany({ orderBy: { tick: "desc" }, take: 100 })
   ]);
-  return Response.json({ lanes, toggles, rulings, accounts });
+  return Response.json({ lanes, toggles, rulings, accounts, events, deck, crises });
 }
 
 export async function POST(req: Request) {

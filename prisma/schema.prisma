@@ -17,6 +17,7 @@ model Run {
   activeSet    String    @default("CITY10")
   N            Int       @default(10)
   P            Int       @default(80)
+  tickCount    Int       @default(11)
   leadThesis   String?
   rumourE20True Boolean  @default(false)
   infoMode     String    @default("CLOSED")
@@ -500,13 +501,24 @@ model MissionInstance {
 }
 
 model OpportunityCard {
-  id      String @id @default(cuid())
-  code    String @unique
-  title   String
-  value   Int    @default(1000)
-  method  String @default("FIRST_COMMIT")
-  payload Json?
-  state   String @default("QUEUED")
+  id              String @id @default(cuid())
+  code            String @unique
+  title           String
+  type            String @default("AFTERMATH")
+  signal          String?
+  detail          String?
+  discoveryPaths  Json?
+  claimMethod     String @default("FIRST_COMMIT")
+  tradeOff        String?
+  value           Int    @default(1000)
+  valueCap        Int?
+  window          Int?
+  decayRule       String?
+  institutions    Json?
+  visibility      String @default("PUBLIC")
+  method          String @default("FIRST_COMMIT")
+  payload         Json?
+  state           String @default("QUEUED")
 }
 
 model OpportunityInstance {
@@ -523,6 +535,11 @@ model EventCrisisCard {
   kind    String
   title   String
   tick    Int    @default(1)
+  phase   String @default("MARKET")
+  signalTick Int?
+  responseWindow Int?
+  targetRule String?
+  visibility String @default("PUBLIC")
   payload Json?
   state   String @default("QUEUED")
 }
@@ -534,6 +551,8 @@ model DeckEntry {
   state     String @default("QUEUED")
   targetId  String?
   vetoLog   String?
+  firedAt   DateTime?
+  createdBy String @default("system")
 }
 
 model Signal {
@@ -542,6 +561,8 @@ model Signal {
   cardCode String
   holderId String
   channel  String @default("whisper")
+  createdAt DateTime @default(now())
+  @@index([tick, cardCode])
 }
 
 model CrisisHit {
@@ -550,6 +571,9 @@ model CrisisHit {
   cardCode  String
   companyId String
   amount    Int    @default(0)
+  state     String @default("OPEN")
+  createdAt DateTime @default(now())
+  @@unique([tick, cardCode, companyId])
 }
 
 model AuctionLot {

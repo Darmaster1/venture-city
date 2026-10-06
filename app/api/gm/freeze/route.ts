@@ -10,9 +10,11 @@ export async function POST(req: Request) {
   const v = await prisma.volunteer.findUnique({ where: { id: s.vid } });
   if (!v || !["GM", "DEPUTY_GM"].includes(v.role)) return Response.json({ error: "GM only." }, { status: 403 });
   const body = await req.json().catch(() => ({}));
-  const state = body.freeze === false ? "RUNNING" : "FINAL_FROZEN";
+  const final = body.final === true;
+  const state = body.freeze === false ? "RUNNING" : (final ? "FINAL_FROZEN" : "PAUSED");
   const run = await prisma.run.findFirst({ orderBy: { date: "desc" } });
   if (!run) return Response.json({ error: "No active run." }, { status: 400 });
+  if (final && run.currentTick < run.tickCount - 1) return Response.json({ error: `Final freeze requires ticks 1-${run.tickCount - 1} to be settled.` }, { status: 409 });
   await prisma.run.update({ where: { id: run.id }, data: { clockState: state, freezeAt: state === "FINAL_FROZEN" ? new Date() : null } });
   await prisma.auditLog.create({ data: { actor: v.id, action: state, tick: 0 } });
   return Response.json({ ok: true, clockState: state });
