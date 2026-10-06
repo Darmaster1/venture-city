@@ -27,6 +27,8 @@ export default async function StationPage() {
   }
   const staff = await prisma.employment.findMany({ where: { companyId: p.companyId, state: "ACTIVE" } });
   const contracts = await prisma.contract.findMany({ where: { OR: [{ sellerId: p.companyId }, { buyerId: p.companyId }], state: "ACTIVE" } });
+  const dealSheets = await prisma.dealSheet.findMany({ where: { OR: [{ sellerId: p.companyId }, { buyerId: p.companyId }] }, orderBy: { createdAt: "desc" }, take: 20 });
+  const lanes = await prisma.lane.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } });
   const tick = await prisma.companyTick.findFirst({ where: { companyId: p.companyId }, orderBy: { tick: "desc" } });
   return (
     <div>
@@ -65,6 +67,10 @@ export default async function StationPage() {
           <table className="vc"><thead><tr><th>ID</th><th>Type</th><th>Window</th><th>State</th></tr></thead>
             <tbody>{contracts.length ? contracts.map((c) => <tr key={c.id}><td className="mono">{c.id.slice(0, 8)}</td><td>{c.type}</td><td className="num">T{c.startTick}–T{c.endTick}</td><td><span className="badge op">{c.state}</span></td></tr>) : <tr><td colSpan={4}>No contracts yet.</td></tr>}</tbody>
           </table>
+        </div>
+        <div className="grid-2">
+          <div className="card"><div className="label">Operational lanes</div><table className="vc"><thead><tr><th>Lane</th><th>Desk</th><th>State</th></tr></thead><tbody>{lanes.map((lane) => <tr key={lane.code}><td><b>{lane.name}</b><br /><span className="sub">{lane.description}</span></td><td>{lane.desk}</td><td><span className="badge op">LIVE</span></td></tr>)}</tbody></table></div>
+          <div className="card"><div className="label">Deal Sheets ({dealSheets.length})</div><table className="vc"><thead><tr><th>Code</th><th>Counterparty</th><th>State</th></tr></thead><tbody>{dealSheets.length ? dealSheets.map((sheet) => <tr key={sheet.id}><td className="mono">{sheet.code}</td><td>{sheet.sellerId === p.companyId ? sheet.buyerId : sheet.sellerId}</td><td><span className="badge info">{sheet.state}</span></td></tr>) : <tr><td colSpan={3}>No Deal Sheets for this company.</td></tr>}</tbody></table></div>
         </div>
       </div>
       <Footer />

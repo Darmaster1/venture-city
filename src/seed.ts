@@ -12,6 +12,8 @@ import opps from "../data/opportunity-templates.json";
 import objectives from "../data/objective-templates.json";
 import infocards from "../data/info-cards.json";
 import bankprods from "../data/bank-products.json";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const RESOURCES = [
   { code: "COMPUTE", bankBasePrice: 20, bankStockT1: 400, restockPerTick: 100 },
@@ -20,6 +22,21 @@ const RESOURCES = [
   { code: "MATERIALS", bankBasePrice: 15, bankStockT1: 400, restockPerTick: 100 },
   { code: "DATA", bankBasePrice: 25, bankStockT1: 400, restockPerTick: 100 },
   { code: "INFRA", bankBasePrice: 30, bankStockT1: 400, restockPerTick: 100 }
+];
+
+const LANES = [
+  { code: "TRADE", name: "Trade lane", desk: "BANK", description: "Resources, spot trades, and settlement-ready Deal Sheets.", sortOrder: 1 },
+  { code: "SUPPLY", name: "Supply lane", desk: "SUPPLIER", description: "Recurring supply lines and capacity checks.", sortOrder: 2 },
+  { code: "CAPITAL", name: "Capital lane", desk: "INVESTOR", description: "Term sheets, loans, and signed capital decisions.", sortOrder: 3 },
+  { code: "PEOPLE", name: "People lane", desk: "TALENT", description: "Hiring, retention, and specialist seats.", sortOrder: 4 },
+  { code: "PUBLIC", name: "Public lane", desk: "GOVERNMENT", description: "Licences, grants, tenders, and rulings.", sortOrder: 5 }
+];
+
+const FEATURE_TOGGLES = [
+  { key: "deal_sheets", enabled: true, description: "Enable floor-checked Deal Sheets and signature workflow." },
+  { key: "station_dashboard", enabled: true, description: "Show lane and Deal Sheet status on company stations." },
+  { key: "city_board_live", enabled: true, description: "Show the live public City Board feed." },
+  { key: "event_crisis_deck", enabled: false, description: "Release event-crisis cards into the live deck." }
 ];
 
 async function acct(ownerType: string, ownerId: string, label: string) {
@@ -34,13 +51,15 @@ export async function seed() {
   const existing = await prisma.company.count();
   if (existing > 0 && !process.env.FORCE_SEED) { console.log("Seed skipped: companies exist. Set FORCE_SEED=1 to reseed."); return; }
   if (process.env.FORCE_SEED) {
-    const tables = ["journalEntry","transaction","contractLine","contract","loan","employment","participant","companyTick","companyTier","requiredSeat","productCard","notableAsset","account","customerCard","supplierLine","licence","grant","tender","mediaProduct","missionCard","opportunityCard","objectiveTemplate","infoCard","bankProduct","investorProduct","run","tick","settlementLock","resource"];
+    const tables = ["dealSignature","dealSheet","featureToggle","lane","journalEntry","transaction","contractLine","contract","loan","employment","participant","companyTick","companyTier","requiredSeat","productCard","notableAsset","account","customerCard","supplierLine","licence","grant","tender","mediaProduct","missionCard","opportunityCard","objectiveTemplate","infoCard","eventCrisisCard","bankProduct","investorProduct","run","tick","settlementLock","resource"];
     for (const t of tables) { try { await (prisma as unknown as Record<string, { deleteMany: () => Promise<unknown> }>)[t]?.deleteMany(); } catch {} }
   }
   await prisma.settlementLock.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
-  for (const r of RESOURCES) await prisma.resource.upsert({ where: { code: r.code }, create: r, update: { bankBasePrice: r.bankBasePrice } });
+  for (const r of RESOURCES) await prisma.resource.upsert({ where: { code: r.code }, create: { ...r, bankStock: r.bankStockT1 }, update: { bankBasePrice: r.bankBasePrice, bankStock: r.bankStockT1 } });
   await prisma.run.create({ data: { date: new Date(), rulesVersion: "1.0.0", contentVersion: "1.0.0", appVersion: "1.0.0", activeSet: "CITY10", N: 10, P: 80, infoMode: "CLOSED", currentTick: 0, clockState: "PRE", createdBy: "seed" } });
   for (let k = 0; k <= 10; k++) await prisma.tick.upsert({ where: { tickNo: k }, create: { tickNo: k }, update: {} });
+  for (const lane of LANES) await prisma.lane.upsert({ where: { code: lane.code }, create: lane, update: lane });
+  for (const toggle of FEATURE_TOGGLES) await prisma.featureToggle.upsert({ where: { key: toggle.key }, create: toggle, update: toggle });
 
   const companies = city10 as Array<{
     id: string; name: string; cluster: string[]; adjust: number; cash: number; asset: string; assetBook: number;
@@ -86,7 +105,7 @@ export async function seed() {
       const id = `${c.id}-P${i + 1}`;
       try {
         const domain = i === 0 ? c.deficit : "Operations";
-        const pt = await prisma.participant.create({ data: { id, name: `${c.name} Staff ${i + 1}`, badgeNo: String(badge++), companyId: c.id, domain, level: 0, salary: 100, qrToken: newQrToken(), capabilityTags: [], createdBy: "seed" } });
+        const pt = await prisma.participant.create({ data: { id, name: `${c.name} Staff ${i + 1}`, badgeNo: String(badge++), companyId: c.id, domain, level: 0, salary: 100, isSignatory: i === 0, qrToken: newQrToken(), capabilityTags: [], createdBy: "seed" } });
         await prisma.employment.create({ data: { participantId: pt.id, companyId: c.id, role: "staff", domain, level: 0, salary: 100, state: "ACTIVE", startTick: 0 } });
       } catch {}
     }
@@ -113,8 +132,18 @@ export async function seed() {
     await prisma.infoCard.upsert({ where: { code: String(ic.code) }, create: { code: String(ic.code), title: String(ic.title), grade: String(ic.grade ?? "C"), copy: String(ic.copy ?? ""), provenance: String(ic.prov ?? "") }, update: {} });
   for (const b of bankprods as Array<Record<string, unknown>>)
     await prisma.bankProduct.upsert({ where: { code: String(b.code) }, create: { code: String(b.code), name: String(b.name), terms: b as object }, update: {} });
+  const crisisCsv = readFileSync(join(process.cwd(), "data", "event-crisis.csv"), "utf8").trim();
+  for (const line of crisisCsv.split(/\r?\n/).slice(1)) {
+    const [code, kind, title, tick, copy] = line.split(",");
+    if (!code) continue;
+    await prisma.eventCrisisCard.upsert({ where: { code }, create: { code, kind, title, tick: Number(tick), payload: { copy } }, update: { kind, title, tick: Number(tick), payload: { copy } } });
+  }
   // Seed GM volunteer (secret: gm-admin-001, hashed)
   await prisma.volunteer.upsert({ where: { id: "gm-1" }, create: { id: "gm-1", name: "Game Master", role: "GM", loginSecretHash: hashSecret(process.env.GM_BOOTSTRAP_SECRET ?? "gm-admin-001"), createdBy: "seed" }, update: {} });
+  for (let i = 2; i <= 5; i++) {
+    const id = `gm-${i}`;
+    await prisma.volunteer.upsert({ where: { id }, create: { id, name: `GM Console ${i}`, role: "GM", loginSecretHash: hashSecret(process.env[`GM_ACCOUNT_${i}_SECRET`] ?? `gm-admin-00${i}`), createdBy: "seed" }, update: {} });
+  }
   console.log("Seed complete.");
 }
 

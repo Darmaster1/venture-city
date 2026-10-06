@@ -66,3 +66,53 @@ npx next build       # Production build (PASSED - 39/39 static & dynamic routes 
 npx tsc --noEmit     # TypeScript strict check (PASSED 0 errors)
 git status           # Clean working tree, pushed commit 0d487db to origin/main
 ```
+
+---
+
+## 7. Day 2 Build State — 2026-10-06
+
+Implemented and wired:
+
+- Deal Sheet console at `/deal-sheet` with lane, tick window, floor-price, two-company signatory checks, send-for-signatures state, and participant signing endpoint.
+- Deal Sheet records are scoped to the signed-in participant company or desk/GM account; stale sheets cannot be signed.
+- Station dashboard now shows live operational lanes and company Deal Sheets.
+- City Board now shows active lanes and public signed Deal Sheet activity.
+- GM Console now exposes five seeded GM accounts (`gm-1` through `gm-5`), lanes, feature toggles, and a persisted ruling log.
+- Observer deck now files and lists persisted observation cards through `/api/observer/observation`.
+- Bank inventory now has persistent `Resource.bankStock`, live stepped pricing, stock depletion, idempotent duplicate protection, reserve-account accounting, and visible live stock.
+- GM reset wipes and reseeds all Day 2 tables, including Deal Sheets, signatures, lanes, toggles, and live bank stock.
+- Added City 10 event-crisis CSV (`data/event-crisis.csv`) and `npm run t0:audit` checks for T0, 10 companies, bank values, signatories, lanes, five GM accounts, O21-O28, and crisis data.
+
+## 8. Bugs Fixed In This Pass
+
+1. Observer `File card` button only called `preventDefault` and never saved anything. It now validates, persists an Incident, audits the action, refreshes the list, and reports errors.
+2. Observer `Flagged moments` was hard-coded to `0`. It now reflects persisted observations.
+3. Bank price calculation always used T1 stock, so prices never stepped down as inventory was sold. Live stock is now persisted and consumed.
+4. Bank sales used newly created `INSTITUTION/BANK` accounts while the seed ledger uses `RESERVE/CITY` accounts. Sales now use the seeded reserve path, and reserve contra-balances are accepted by the ledger.
+5. Bank duplicate idempotency requests could decrement inventory a second time before the ledger returned the existing transaction. Duplicate keys now return before stock reservation.
+6. Bank accepted decimal, negative, and malformed unit quantities. It now requires positive whole units and validates the company and available stock.
+7. Deal Sheet reads were able to expose every sheet to any authenticated participant. Participant reads are now company-scoped, and the desk page requires a desk/GM volunteer session.
+8. Deal Sheets could be signed after leaving the signature state. Signing now requires `SENT_FOR_SIGNATURES`.
+9. Board database failures produced an opaque HTTP 500. The feed now returns a controlled 503 payload for the existing retry UI.
+10. GM freeze silently returned success when no run existed. It now reports `No active run.` and updates a specific run.
+11. GM manual entries accepted negative/decimal amounts and unknown destination account IDs. They now require positive whole amounts and an existing destination.
+12. GM feature-toggle updates could throw an unhandled database error for unknown keys. They now return a clear 400 response.
+13. Checkbox inputs were inheriting full-width text-input dimensions, and textareas had no shared styling. Form controls now have correct sizing, focus-visible states, and textarea treatment.
+14. Bank submission had no loading guard or network error state. It now prevents double-clicks and reports processing, duplicate, success, and failure states.
+15. `npm run e2e` collected Vitest unit tests because Playwright had no test filter. The script now targets `tests-e2e.spec.ts` and includes a reusable `playwright.config.ts` with local `baseURL` and `webServer` settings.
+16. The Bank smoke test matched a hidden navigation-menu link named `Bank`, producing a false positive. It now verifies the intended unauthenticated redirect to `/login`.
+17. Bank server-render failures previously replaced the entire desk with an error page. The desk now renders a clear unavailable-state alert while preserving its layout.
+
+## 9. Latest Verification
+
+```bash
+npx prisma validate       # PASSED
+npx prisma generate       # PASSED
+npx tsc --noEmit          # PASSED
+npm test                  # PASSED — 3 files, 12 tests
+npm run build             # PASSED — 43 routes compiled
+npm run e2e               # PASSED — 2 Playwright smoke tests
+npm run t0:audit          # BLOCKED — local .env Neon credentials rejected
+```
+
+The local audit could not connect to `ep-ancient-boat-b36ymcbp-pooler.c-4.ap-southeast-1.aws.neon.tech` because the configured credentials were rejected. No production database state was changed during this pass. The repository still does not contain the GM Handbook, so handbook-number reconciliation remains pending that source document and valid database credentials.

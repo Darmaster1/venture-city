@@ -60,6 +60,8 @@ export async function postTransaction(input: PostTxInput, ext?: Parameters<Param
     // 2. Spender covers debit legs (check available using tx)
     for (const l of input.legs) {
       if (l.amount < 0) {
+        const account = await tx.account.findUnique({ where: { id: l.accountId }, select: { ownerType: true } });
+        if (account?.ownerType === "RESERVE") continue;
         const rows = await tx.journalEntry.aggregate({ where: { accountId: l.accountId, asset: l.asset }, _sum: { amount: true } });
         const bal = rows._sum.amount ?? 0;
         if (bal + l.amount < 0) throw new Error(`Insufficient balance: account ${l.accountId} asset ${l.asset} has ${bal}, needs ${-l.amount}`);

@@ -74,6 +74,7 @@ export default function GMPage() {
             <div className="label">Late registration · new participant</div>
             <ParticipantForm />
           </div>
+          <ControlPanel />
         </div>
       </div>
       <Footer />
@@ -293,4 +294,30 @@ function EntryForm() {
       <p style={{ color: "var(--fg-muted)" }}>{msg}</p>
     </form>
   );
+}
+
+function ControlPanel() {
+  const [data, setData] = useState<{ accounts: { id: string; name: string; role: string; deskOrCompany: string | null }[]; lanes: { code: string; name: string; desk: string; active: boolean }[]; toggles: { key: string; enabled: boolean; description: string }[]; rulings: { id: string; tick: number; text: string; by: string }[] }>({ accounts: [], lanes: [], toggles: [], rulings: [] });
+  const [ruling, setRuling] = useState("");
+  const [note, setNote] = useState("");
+  const load = () => fetch("/api/gm/control").then((r) => r.json()).then(setData).catch(() => setNote("Could not load GM controls."));
+  useEffect(() => { load(); }, []);
+  async function post(body: object) {
+    const response = await fetch("/api/gm/control", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const json = await response.json();
+    setNote(response.ok ? "Saved." : (json.error ?? "Save failed."));
+    if (response.ok) load();
+  }
+  return <div className="card" style={{ borderTop: "5px solid #0E7C9E" }}>
+    <div className="label">Day two controls</div>
+    <div className="grid-2">
+      <div><h3>GM accounts ({data.accounts.length} / 5)</h3><table className="vc"><thead><tr><th>Name</th><th>Role</th><th>ID</th></tr></thead><tbody>{data.accounts.map((account) => <tr key={account.id}><td>{account.name}</td><td>{account.role}</td><td className="mono">{account.id}</td></tr>)}</tbody></table></div>
+      <div><h3>Lanes</h3><table className="vc"><thead><tr><th>Code</th><th>Desk</th><th>State</th></tr></thead><tbody>{data.lanes.map((lane) => <tr key={lane.code}><td className="mono">{lane.code}</td><td>{lane.desk}</td><td>{lane.active ? "LIVE" : "OFF"}</td></tr>)}</tbody></table></div>
+    </div>
+    <div className="grid-2" style={{ marginTop: 18 }}>
+      <div><h3>Feature toggles</h3>{data.toggles.map((toggle) => <label key={toggle.key} style={{ display: "flex", gap: 8, alignItems: "center", margin: "10px 0" }}><input type="checkbox" checked={toggle.enabled} onChange={(event) => post({ action: "toggle", key: toggle.key, enabled: event.target.checked })} /><span><b>{toggle.key}</b><br /><span className="sub">{toggle.description}</span></span></label>)}</div>
+      <div><h3>Ruling log</h3><form onSubmit={(event) => { event.preventDefault(); post({ action: "ruling", text: ruling }); setRuling(""); }}><textarea value={ruling} onChange={(event) => setRuling(event.target.value)} placeholder="Record the ruling and its interpretation." rows={3} style={{ width: "100%" }} /><button className="btn btn-primary" type="submit" style={{ marginTop: 8 }}>Log ruling</button></form><ul>{data.rulings.slice(0, 5).map((item) => <li key={item.id}>T{item.tick}: {item.text}</li>)}</ul></div>
+    </div>
+    <p aria-live="polite"><b>{note}</b></p>
+  </div>;
 }

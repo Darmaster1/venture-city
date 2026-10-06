@@ -7,6 +7,7 @@ import { seed } from "@/src/seed";
 // Full game tables wiped on reset. Volunteers are NEVER deleted here
 // (gm-1 must survive with its password); other volunteers get fresh secrets.
 const WIPED = [
+  "dealSignature", "dealSheet", "featureToggle", "lane",
   "journalEntry", "transaction", "contractLine", "contract", "loan",
   "reliabilityEvent", "shareHolding", "termSheet", "productionOrder", "companyTick",
   "employment", "participant", "companyTier", "requiredSeat", "productCard", "notableAsset",

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Navbar, Footer, Stat, CoDot, HeroOrbs, HamsterLoader } from "@/src/components/chrome";
 import CursorRingField from "@/src/components/cursor-ring-field";
 
-type Board = { tick: number; clock: string; infoMode: string; server_time: string; companies: { id: string; name: string; lifecycle: string; rv: number | null }[]; bankBase: Record<string, number> };
+type Board = { tick: number; clock: string; infoMode: string; server_time: string; companies: { id: string; name: string; lifecycle: string; rv: number | null }[]; bankBase: Record<string, number>; lanes: { code: string; name: string; desk: string }[]; activeDeals: { code: string; lane: string; parties: string; state: string }[] };
 const RES_COLORS: Record<string, string> = { COMPUTE: "#6C3DF4", ENERGY: "#FFB020", LOGISTICS: "#0E9FD8", MATERIALS: "#C25E2B", DATA: "#E84FB8", INFRA: "#2F855A" };
 const CLOCK_FRIENDLY: Record<string, string> = {
   PRE: "Warming up",
@@ -71,6 +71,10 @@ export default function BoardPage() {
               ))}</tbody>
             </table>
           </div>
+        </div>
+        <div className="grid-2">
+          <div className="card"><div className="label">City lanes</div><table className="vc"><thead><tr><th>Lane</th><th>Desk</th></tr></thead><tbody>{(b?.lanes ?? []).map((lane) => <tr key={lane.code}><td><b>{lane.name}</b></td><td>{lane.desk}</td></tr>)}</tbody></table></div>
+          <div className="card"><div className="label">Signed activity</div><table className="vc"><thead><tr><th>Deal</th><th>Parties</th><th>State</th></tr></thead><tbody>{(b?.activeDeals ?? []).length ? b?.activeDeals.map((deal) => <tr key={deal.code}><td className="mono">{deal.code}</td><td>{deal.parties}</td><td><span className="badge info">{deal.state}</span></td></tr>) : <tr><td colSpan={3}>No public Deal Sheet activity yet.</td></tr>}</tbody></table></div>
         </div>
       </div>
       <Footer />

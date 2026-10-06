@@ -6,7 +6,7 @@ export const COMPANY_COLORS: Record<string, string> = {
 };
 
 const DESKS: Array<[string, string]> = [
-  ["/bank", "Bank"], ["/investor", "Investor"], ["/customer", "Customers"],
+  ["/bank", "Bank"], ["/deal-sheet", "Deal Sheet"], ["/investor", "Investor"], ["/customer", "Customers"],
   ["/supplier", "Suppliers"], ["/logistics", "Logistics"], ["/government", "Government"],
   ["/media", "Media"], ["/talent", "Talent"]
 ];

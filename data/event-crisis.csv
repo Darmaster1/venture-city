@@ -1,0 +1,9 @@
+code,kind,title,tick,copy
+E01,MARKET,Compute demand shock,2,Compute demand rises and the bank price step is visible.
+E02,SUPPLY,Energy interruption,3,Energy capacity is constrained for one settlement.
+E03,REGULATORY,Licence review,4,Government desk reviews one regulated lane.
+E04,MEDIA,Public confidence swing,5,Media demand shifts toward verified delivery.
+E05,LOGISTICS,Route disruption,6,Logistics deliveries require an alternate route.
+E06,CAPITAL,Funding window,7,Investor desk opens a short capital window.
+E07,LABOUR,Specialist shortage,8,Specialist seats carry a higher operational premium.
+E08,MARKET,Credit window,9,Bank credit window is available for eligible companies.

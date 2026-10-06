@@ -69,8 +69,11 @@ $env:POSTGRES_PRISMA_URL="<production pooled url>"
 $env:POSTGRES_URL_NON_POOLING="<production direct url>"
 npx prisma migrate deploy
 npm run db:seed
+npm run t0:audit
 ```
 (On Mac/Linux use `export` instead of `$env:`.) Do this BEFORE printing badges, because seed generates the qrTokens.
+
+The Day 2 migration creates Deal Sheets, signatures, lanes, feature toggles, and live bank inventory. Vercel's build step only runs `prisma generate` and `next build`, so `npx prisma migrate deploy` must be run explicitly against Production after pushing this release and before `npm run db:seed`. Do not use `FORCE_SEED=1` after event activity begins.
 
 Step 10 — Print the QR badges
 1. Log in as GM on the production URL, then open `https://<your-app>.vercel.app/api/gm/badges`.
@@ -87,6 +90,12 @@ Step 11 — Event day checklist
 - [ ] Draw the lead thesis at 08:30 with the Deputy GM as witness
 - [ ] Start Human Internet I at 09:50 (announce, switch info_mode to DARK)
 - [ ] Start Market Open at 10:35 (announce, switch info_mode to CLOSED, set current_tick to 1)
+
+For browser smoke tests locally:
+```bash
+npm run e2e
+```
+This starts/reuses the local dev server and runs `tests-e2e.spec.ts` only.
 
 If the internet drops
 1. Announce paper mode. The Deputy GM opens the last printed paper snapshot (from `/api/paper-export?tick=<last-settled>`; print one at every tick boundary).

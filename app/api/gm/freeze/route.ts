@@ -11,7 +11,9 @@ export async function POST(req: Request) {
   if (!v || !["GM", "DEPUTY_GM"].includes(v.role)) return Response.json({ error: "GM only." }, { status: 403 });
   const body = await req.json().catch(() => ({}));
   const state = body.freeze === false ? "RUNNING" : "FINAL_FROZEN";
-  await prisma.run.updateMany({ data: { clockState: state, freezeAt: state === "FINAL_FROZEN" ? new Date() : null } });
+  const run = await prisma.run.findFirst({ orderBy: { date: "desc" } });
+  if (!run) return Response.json({ error: "No active run." }, { status: 400 });
+  await prisma.run.update({ where: { id: run.id }, data: { clockState: state, freezeAt: state === "FINAL_FROZEN" ? new Date() : null } });
   await prisma.auditLog.create({ data: { actor: v.id, action: state, tick: 0 } });
   return Response.json({ ok: true, clockState: state });
 }

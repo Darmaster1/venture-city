@@ -3,7 +3,8 @@ test("board loads", async ({ page }) => {
   await page.goto("/board");
   await expect(page.getByText("City Board")).toBeVisible();
 });
-test("bank desk renders", async ({ page }) => {
+test("bank desk requires sign in", async ({ page }) => {
   await page.goto("/bank");
-  await expect(page.getByText("Bank")).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByText("Your badge is your ticket.")).toBeVisible();
 });

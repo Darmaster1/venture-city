@@ -108,8 +108,13 @@ table.vc td.num, table.vc th.num { text-align: right; }
 
 /* Forms + buttons */
 label.f { display: block; font-size: 12px; font-weight: 600; color: var(--fg-muted); margin: 10px 0 5px; text-transform: uppercase; letter-spacing: 0.06em; }
-input, select { height: 42px; border: 2px solid var(--border); border-radius: 12px; padding: 0 13px; background: #fff; color: var(--fg); font-size: 15px; width: 100%; transition: border-color 0.15s, box-shadow 0.15s; }
+input, select, textarea { border: 2px solid var(--border); border-radius: 12px; padding: 10px 13px; background: #fff; color: var(--fg); font: inherit; width: 100%; transition: border-color 0.15s, box-shadow 0.15s; }
+input, select { height: 42px; padding-top: 0; padding-bottom: 0; }
+textarea { min-height: 92px; resize: vertical; line-height: 1.45; }
+input[type="checkbox"] { width: 18px; height: 18px; padding: 0; accent-color: var(--accent); flex: 0 0 auto; }
 input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91, 80, 230, 0.18); }
+textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91, 80, 230, 0.18); }
+.btn:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid rgba(0, 194, 168, 0.55); outline-offset: 2px; }
 .btn { min-height: 42px; padding: 0 20px; border-radius: 12px; border: 1.5px solid var(--border-strong); background: #fff; color: var(--fg); font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; transition: all 0.18s var(--ease); }
 .btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }

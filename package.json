@@ -10,9 +10,10 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx src/seed.ts",
+    "t0:audit": "tsx scripts/t0-audit.ts",
     "settle:sim": "tsx scripts/simulate.ts",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test tests-e2e.spec.ts"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
