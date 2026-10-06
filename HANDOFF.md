@@ -29,7 +29,7 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 
 ---
 
-## 3. Database State (Production) — VERIFIED 2026-10-06 15:25 UTC
+## 3. Database State (Production) — VERIFIED 2026-10-06 15:38 UTC
 
 - **Current tick**: 0 (clean T0, ready for event)
 - **Clock**: PRE
@@ -42,22 +42,19 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 
 ## 4. Recent Fixes & Additions (2026-10-06)
 
-1. **Global WebGL Particle Animations**:
-   - Added `CursorRingField` inside `PageHero` (`src/components/chrome.tsx`) so that the interactive canvas particle background now renders across **all pages and desk heroes**, not just the landing page.
+1. **Git Commit & Deployment Status**:
+   - Pushed commit `6268f69`: Added WebGL animations, clean seed option, desk APIs, and CSRF middleware.
+   - Pushed commit `8de8d8c`: Cleaned paper export formatting/symbols, restricted `/gm` route access in middleware, and added crew Rename & Delete controls in GM console.
 
-2. **Clean Reset Option**:
-   - Updated `app/api/gm/reset/route.ts` and `app/gm/page.tsx` with a checkbox option: *"Clear participants and keep only default companies (Clean seed)"*.
+2. **Paper Export Cleaning**:
+   - Stripped invalid / weird symbols, unicode dots, check boxes, and arrows from `app/api/paper-export/route.ts` and replaced with standard clean ASCII characters (`|`, `->`, `[ ]`).
 
-3. **Complete Desk API Transaction Wiring**:
-   - **Investor Desk**: Created `/api/investor/term-sheet` POST route to issue term sheets.
-   - **Customer Desk**: Created `/api/customer/award` POST route to award customer cards.
-   - **Supplier Market**: Created `/api/supplier/order` POST route with ledger integration for ordering resources.
-   - **Government Desk**: Created `/api/government/apply` POST route handling licence fees and grant disbursements.
-   - **Media Desk**: Created `/api/media/purchase` POST route for media product purchases.
-   - **Talent Exchange**: Created `/api/talent/hire` POST route for specialist hiring/transferring.
+3. **Strict GM Route Access Control**:
+   - Updated `middleware.ts` to inspect session roles: non-GM users (e.g. Bank desk / Volunteer staff) attempting to open `/gm` or `/api/gm` are instantly redirected to `/login` before the page or API loads.
 
-4. **CSRF Middleware Security**:
-   - Enforced double-submit cookie verification (`vc_csrf` vs `x-csrf-token` header) in `middleware.ts` for all POST requests.
+4. **Crew Management Controls**:
+   - Updated `app/api/gm/volunteers/route.ts` with `PATCH` (rename crew member) and `DELETE` (remove crew member, protecting `gm-1`).
+   - Added **Rename** and **Delete** buttons to `CrewTable` in `app/gm/page.tsx`.
 
 ---
 
@@ -65,7 +62,8 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 
 ```bash
 npx tsc --noEmit     # TypeScript strict check (PASSED 0 errors)
-npx vitest run       # Unit test suite
+npx vitest run       # Unit test suite (PASSED 12/12)
+git status           # Clean working tree, pushed to origin/main
 ```
 
 ---
@@ -73,4 +71,4 @@ npx vitest run       # Unit test suite
 ## 6. Git State
 
 - **Repo**: https://github.com/Darmaster1/venture-city
-- **Branch**: `main`
+- **Branch**: `main` (up to date with `origin/main`)
