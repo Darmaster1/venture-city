@@ -1,4 +1,6 @@
-const BASE = "https://venture-city.vercel.app";
+const BASE = process.env.PROD_BASE ?? "https://venture-city.vercel.app";
+const GM_SECRET = process.env.GM_SECRET ?? process.argv[2];
+if (!GM_SECRET) { console.error("Set GM_SECRET env or pass the gm-1 secret as argv[2]."); process.exit(1); }
 async function main() {
   const home = await fetch(BASE + "/");
   const homeText = await home.text();
@@ -7,7 +9,7 @@ async function main() {
   console.log("board: tick=" + board.tick, "clock=" + board.clock, "companies=" + board.companies.length);
   const auth = await fetch(BASE + "/api/auth", {
     method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ volunteerId: "gm-1", secret: "8f7426b65673c92b1701cc7e77ba1de6" })
+    body: JSON.stringify({ volunteerId: "gm-1", secret: GM_SECRET })
   });
   console.log("gm login:", auth.status);
   const setCookie = auth.headers.get("set-cookie") || "";

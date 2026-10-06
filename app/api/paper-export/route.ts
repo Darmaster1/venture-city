@@ -91,7 +91,7 @@ export async function GET(req: Request) {
     const html = `<!doctype html><html><head><title>Paper runbook tick ${tick}</title><style>
       *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;margin:0;padding:16px;background:#eee}
       .page{background:#fff;max-width:950px;margin:0 auto 16px;padding:20px 24px}
-      table{border-collapse:collapse;width:100%;margin:8px 0} td,th{border:1px solid #999;padding:3px 6px;text-align:left} td.n{text-align:right;font-variant-numeric:tabular-nums}
+      table{border-collapse:collapse;width:100%;margin:8px 0} td,th{border:1px solid #999;padding:3px 6px;text-align:left} td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
       .mut{color:#555;font-size:11px} .work{border:1px solid #999;border-radius:6px;padding:8px 12px;margin:8px 0;break-inside:avoid}
       .slip{border:2px dashed #333;border-radius:6px;padding:12px;margin:10px 0;line-height:2}
       h1{font-size:22px} h2{font-size:16px;border-bottom:2px solid #111;padding-bottom:4px;margin-top:0}

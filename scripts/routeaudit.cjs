@@ -3,7 +3,7 @@ async function main() {
   console.log("anon /gm status:", login.status, "->", login.headers.get("location"));
   const auth = await fetch("http://localhost:3000/api/auth", {
     method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ volunteerId: "gm-1", secret: "490bbe75e9c7e418eb9a1e96315b3a27" })
+    body: JSON.stringify({ volunteerId: "gm-1", secret: process.env.GM_SECRET ?? process.argv[2] })
   });
   console.log("login status:", auth.status, await auth.text());
   const setCookie = auth.headers.get("set-cookie") || "";

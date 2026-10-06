@@ -18,8 +18,11 @@ export async function POST(req: Request) {
   if (!v || !["GM", "DEPUTY_GM"].includes(v.role)) return Response.json({ error: "GM only." }, { status: 403 });
   const run = await prisma.run.findFirst({ orderBy: { date: "desc" } });
   if (!run) return Response.json({ error: "No run." }, { status: 400 });
-  if (run.clockState === "FINAL_FROZEN" || run.clockState === "FROZEN_FOR_SETTLEMENT")
+  if (run.clockState === "FINAL_FROZEN")
     return Response.json({ error: "City is frozen." }, { status: 409 });
+  // FROZEN_FOR_SETTLEMENT means a previous attempt died mid-way: fall
+  // through and resume it. Per-op idempotency keys make resume safe, and
+  // the lock table still refuses a genuinely concurrent second settle.
   const next = run.currentTick + 1;
   if (next > 10) return Response.json({ error: "Event complete." }, { status: 400 });
   try {
