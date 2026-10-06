@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Navbar, Footer, HeroOrbs, HamsterLoader } from "@/src/components/chrome";
+import { Navbar, Footer, HeroOrbs, HamsterLoader, PageHero } from "@/src/components/chrome";
 
 export default function GMPage() {
   const [log, setLog] = useState<string[]>([]);
@@ -29,14 +29,9 @@ export default function GMPage() {
     <div>
       <Navbar />
       <div className="wrap">
-        <div className="hero" style={{ padding: "36px 32px" }}>
-          <HeroOrbs />
-          <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>Game master console</div>
-          <h1 style={{ fontSize: 40 }}>Run the city.</h1>
-          <p>Settle ticks, freeze the market, post manual entries. Every action is journaled.</p>
-          <div className="hero-cta">
-            <button className="btn btn-danger" onClick={settle} disabled={busy} style={{ height: 48, padding: "0 28px", fontSize: 16 }}>{busy ? "Settling." : "Settle tick"}</button>
-          </div>
+        <PageHero eyebrow="Game master console" title="Run the city." sub="Settle ticks, freeze the market, post manual entries. Every action is journaled." />
+        <div style={{ margin: "-10px 0 16px" }}>
+          <button className="btn btn-danger" onClick={settle} disabled={busy} style={{ height: 48, padding: "0 28px", fontSize: 16 }}>{busy ? "Settling..." : "Settle tick"}</button>
         </div>
         <div className="card" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <span className="label">City controls</span>
@@ -122,9 +117,20 @@ function CrewTable() {
     else setNote(j.error ?? "Failed to delete.");
   }
 
+  async function copyLink(id: string) {
+    const r = await fetch("/api/gm/impersonate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
+    const j = await r.json();
+    if (r.ok && j.loginUrl) {
+      await navigator.clipboard.writeText(j.loginUrl);
+      setNote("Copied login URL to clipboard!");
+    } else {
+      setNote(j.error ?? "Failed to copy link.");
+    }
+  }
+
   return (
     <div>
-      <p style={{ color: "var(--fg-muted)" }}>Sign-in-as opens that desk in a new tab for fast checking. Changing a secret shows it once — copy it to the volunteer.</p>
+      <p style={{ color: "var(--fg-muted)" }}>Sign-in-as opens that desk in a new tab for fast checking. Copy link lets you open it in an Incognito window without affecting your GM session.</p>
       <table className="vc"><thead><tr><th>Name</th><th>Role</th><th>Desk</th><th>Actions</th></tr></thead>
         <tbody>{crew.map((v) => {
           return (
@@ -134,6 +140,7 @@ function CrewTable() {
               <td>{v.deskOrCompany ?? "-"}</td>
               <td>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <button className="btn" style={{ minHeight: 32 }} onClick={() => copyLink(v.id)}>Copy link</button>
                   <button className="btn" style={{ minHeight: 32 }} onClick={() => checkAs(v.id)}>Check desk</button>
                   <button className="btn" style={{ minHeight: 32 }} onClick={() => newSecret(v.id)}>New secret</button>
                   <button className="btn" style={{ minHeight: 32 }} onClick={() => renameCrew(v.id, v.name)}>Rename</button>
@@ -151,12 +158,34 @@ function CrewTable() {
 
 function ParticipantChecks() {
   const [parts, setParts] = useState<Array<{ id: string; name: string; badgeNo: string; companyId: string | null; loginUrl: string }>>([]);
+  const [copyMsg, setCopyMsg] = useState("");
+
   useEffect(() => { fetch("/api/gm/participants").then((r) => r.json()).then((j) => setParts((j.participants ?? []).slice(0, 12))).catch(() => null); }, []);
+
+  async function copyParticipantLink(url: string) {
+    await navigator.clipboard.writeText(url);
+    setCopyMsg("Copied portal link to clipboard!");
+    setTimeout(() => setCopyMsg(""), 3000);
+  }
+
   return (
     <div>
-      <p style={{ color: "var(--fg-muted)" }}>First 12 participants — open any login link in a new tab to check the portal as them. Full list with all links: <a href="/api/gm/participants">participants API</a>.</p>
-      <table className="vc"><thead><tr><th>Badge</th><th>Name</th><th>Company</th><th>Check</th></tr></thead>
-        <tbody>{parts.map((p) => <tr key={p.id}><td className="num">{p.badgeNo}</td><td>{p.name}</td><td>{p.companyId ?? "–"}</td><td><a className="btn" style={{ minHeight: 32 }} href={p.loginUrl} target="_blank" rel="noreferrer">Open portal</a></td></tr>)}</tbody>
+      <p style={{ color: "var(--fg-muted)" }}>First 12 participants — copy any login link to open in an incognito window without logging out your GM account. Full list: <a href="/api/gm/participants">participants API</a>.</p>
+      {copyMsg && <p className="mono" style={{ color: "#2F855A" }}>{copyMsg}</p>}
+      <table className="vc"><thead><tr><th>Badge</th><th>Name</th><th>Company</th><th>Actions</th></tr></thead>
+        <tbody>{parts.map((p) => (
+          <tr key={p.id}>
+            <td className="num">{p.badgeNo}</td>
+            <td>{p.name}</td>
+            <td>{p.companyId ?? "-"}</td>
+            <td>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button className="btn" style={{ minHeight: 32 }} onClick={() => copyParticipantLink(p.loginUrl)}>Copy portal link</button>
+                <a className="btn" style={{ minHeight: 32 }} href={p.loginUrl} target="_blank" rel="noreferrer">Open portal</a>
+              </div>
+            </td>
+          </tr>
+        ))}</tbody>
       </table>
     </div>
   );

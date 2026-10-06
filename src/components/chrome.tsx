@@ -10,6 +10,11 @@ const DESKS: Array<[string, string]> = [
 ];
 
 export function Navbar() {
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
+
   return (
     <nav className="nav">
       <div className="nav-inner">
@@ -22,6 +27,7 @@ export function Navbar() {
             <div className="drop">{DESKS.map(([h, l]) => <a key={h} href={h}>{l}</a>)}</div>
           </details>
           <a href="/gm">GM</a>
+          <button onClick={handleLogout} className="btn" style={{ minHeight: 32, padding: "0 14px", marginLeft: 8, background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>Logout</button>
         </div>
         <span style={{ marginLeft: "auto", fontSize: 13, color: "rgba(255,255,255,0.65)" }}>{process.env.NEXT_PUBLIC_VENUE_NAME ?? ""}</span>
       </div>
