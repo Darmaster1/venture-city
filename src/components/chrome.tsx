@@ -65,6 +65,22 @@ export function CoDot({ id }: { id: string }) {
   return <span className="co-dot" style={{ background: COMPANY_COLORS[id] ?? "#999" }} />;
 }
 
+export function HamsterLoader({ label }: { label?: string }) {
+  return (
+    <div style={{ textAlign: "center", padding: "18px 0" }} role="status" aria-live="polite">
+      <div className="wheel-and-hamster" aria-hidden="true">
+        <div className="wheel" />
+        <div className="hamster">
+          <div className="hamster__head"><div className="hamster__ear" /><div className="hamster__eye" /><div className="hamster__nose" /></div>
+          <div className="hamster__body"><div className="hamster__limb--fr" /><div className="hamster__limb--fl" /><div className="hamster__limb--br" /><div className="hamster__limb--bl" /><div className="hamster__tail" /></div>
+        </div>
+        <div className="spoke" />
+      </div>
+      {label && <p style={{ color: "var(--fg-muted)" }}>{label}</p>}
+    </div>
+  );
+}
+
 export function HeroOrbs() {
   return (<><span className="orb orb-a" /><span className="orb orb-b" /></>);
 }

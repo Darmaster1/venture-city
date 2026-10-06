@@ -1,4 +1,5 @@
 import { Navbar, Footer, HeroOrbs } from "@/src/components/chrome";
+import CursorRingField from "@/src/components/cursor-ring-field";
 import { prisma } from "@/src/db";
 
 export const dynamic = "force-dynamic";
@@ -19,13 +20,16 @@ export default async function Landing() {
       <Navbar />
       <div className="wrap">
         <div className="hero">
+          <div className="field-bg" aria-hidden="true"><CursorRingField /></div>
           <HeroOrbs />
+          <div className="hero-content">
           <div className="label" style={{ color: "rgba(255,255,255,0.75)" }}>One day · ten startups · one economy</div>
           <h1>Build your venture before the market freezes.</h1>
           <p>Venture City is a live-action startup simulation: trade resources, win customers, raise funding and survive ten market ticks. Every balance is journaled. Nothing is paper — until the internet drops.</p>
           <div className="hero-cta">
             <a className="btn btn-light" href="/login" style={{ height: 48, padding: "0 28px", fontSize: 16 }}>Enter the city</a>
             <a className="btn" href="/board" style={{ height: 48, padding: "0 28px", fontSize: 16, background: "#fff" }}>Watch the board</a>
+          </div>
           </div>
         </div>
         <div className="grid-3">

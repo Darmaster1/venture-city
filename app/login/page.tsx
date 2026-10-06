@@ -2,6 +2,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Navbar, Footer, HeroOrbs } from "@/src/components/chrome";
+import CursorRingField from "@/src/components/cursor-ring-field";
 
 export default function LoginPage() {
   return (
@@ -57,9 +58,12 @@ function Forms() {
   return (
     <div className="wrap" style={{ maxWidth: 520 }}>
         <div className="hero" style={{ padding: "36px 32px" }}>
+          <div className="field-bg" aria-hidden="true"><CursorRingField density={160} dotSize={200} /></div>
           <HeroOrbs />
+          <div className="hero-content">
           <h1 style={{ fontSize: 36 }}>Your badge is your ticket.</h1>
           <p>Paste the code from your badge QR. Volunteers, use your desk account below.</p>
+          </div>
         </div>
         <div className="card" style={{ borderTop: "5px solid #6C3DF4" }}>
           <div className="label">Participants</div>

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Navbar, Footer, HeroOrbs } from "@/src/components/chrome";
+import { Navbar, Footer, HeroOrbs, HamsterLoader } from "@/src/components/chrome";
 
 export default function GMPage() {
   const [log, setLog] = useState<string[]>([]);
@@ -47,6 +47,7 @@ export default function GMPage() {
           <button className="btn" onClick={backup}>Backup journal</button>
         </div>
         <p aria-live="polite"><b>{msg}</b></p>
+        {busy && <div className="card"><HamsterLoader label="Settling the tick — writing to the journal." /></div>}
         <div className="card" style={{ borderTop: "5px solid #B42318" }}>
           <div className="label">Test runs · crew quick-check</div>
           <CrewTable />
