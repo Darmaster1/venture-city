@@ -12,12 +12,19 @@ export type StepLog = string[];
 // ops complete. Step markers in Tick.notes let a resume skip done steps.
 
 async function ensureAccount(ownerType: string, ownerId: string, label: string): Promise<string> {
-  const a = await prisma.account.upsert({
-    where: { ownerType_ownerId_label: { ownerType, ownerId, label } },
-    create: { ownerType, ownerId, label, createdBy: "settle" },
-    update: {}
-  });
-  return a.id;
+  const ex = await prisma.account.findUnique({ where: { ownerType_ownerId_label: { ownerType, ownerId, label } } });
+  if (ex) return ex.id;
+  try {
+    const a = await prisma.account.create({ data: { ownerType, ownerId, label, createdBy: "settle" } });
+    return a.id;
+  } catch (e) {
+    // Lost a create race with a parallel worker: re-read the winner's row.
+    if ((e as { code?: string }).code === "P2002") {
+      const retry = await prisma.account.findUnique({ where: { ownerType_ownerId_label: { ownerType, ownerId, label } } });
+      if (retry) return retry.id;
+    }
+    throw e;
+  }
 }
 
 async function bal(accountId: string, asset: string): Promise<number> {
