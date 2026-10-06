@@ -25,11 +25,9 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 | Prod Neon pooled URL | `postgresql://neondb_owner:npg_MxzQRaldF4o8@ep-cool-mode-b3u5yxfg-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true&connect_timeout=15` | Vercel env |
 | Prod Neon direct URL | `postgresql://neondb_owner:npg_MxzQRaldF4o8@ep-cool-mode-b3u5yxfg.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&connect_timeout=15` | Vercel env |
 
-**All secrets are also in `.env.local` (gitignored) and `.env` (gitignored, for Prisma CLI). Host target is exclusively Vercel + Neon.**
-
 ---
 
-## 3. Database State (Production) — VERIFIED 2026-10-06 15:38 UTC
+## 3. Database State (Production) — VERIFIED 2026-10-06 15:47 UTC
 
 - **Current tick**: 0 (clean T0, ready for event)
 - **Clock**: PRE
@@ -42,19 +40,20 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 
 ## 4. Recent Fixes & Additions (2026-10-06)
 
-1. **Git Commit & Deployment Status**:
-   - Pushed commit `6268f69`: Added WebGL animations, clean seed option, desk APIs, and CSRF middleware.
-   - Pushed commit `8de8d8c`: Cleaned paper export formatting/symbols, restricted `/gm` route access in middleware, and added crew Rename & Delete controls in GM console.
+1. **WebGL Animations on GM and Board Pages**:
+   - Added `CursorRingField` background to `app/board/page.tsx` and `app/gm/page.tsx` heroes so particle animation now renders on both the Board and GM console.
 
-2. **Paper Export Cleaning**:
-   - Stripped invalid / weird symbols, unicode dots, check boxes, and arrows from `app/api/paper-export/route.ts` and replaced with standard clean ASCII characters (`|`, `->`, `[ ]`).
+2. **Global Logout Button**:
+   - Added `/api/auth/logout` API route and integrated a **Logout** button in `Navbar` (`src/components/chrome.tsx`) that clears authentication cookies and redirects to `/login`.
 
-3. **Strict GM Route Access Control**:
-   - Updated `middleware.ts` to inspect session roles: non-GM users (e.g. Bank desk / Volunteer staff) attempting to open `/gm` or `/api/gm` are instantly redirected to `/login` before the page or API loads.
+3. **Copy Link Option for GM Impersonation**:
+   - Added **Copy Link** buttons to both `CrewTable` and `ParticipantChecks` in `app/gm/page.tsx`. GMs can copy individual volunteer or participant login URLs to open them in Incognito/private windows without logging out the GM session.
 
-4. **Crew Management Controls**:
-   - Updated `app/api/gm/volunteers/route.ts` with `PATCH` (rename crew member) and `DELETE` (remove crew member, protecting `gm-1`).
-   - Added **Rename** and **Delete** buttons to `CrewTable` in `app/gm/page.tsx`.
+4. **Paper Export Cleaning**:
+   - Cleaned symbols in `app/api/paper-export/route.ts` replacing non-ASCII symbols with plain ASCII (`|`, `->`, `[ ]`).
+
+5. **Strict GM Route Access**:
+   - Updated `middleware.ts` to restrict `/gm` and `/api/gm` to `GM`, `DEPUTY_GM`, or `TECH_LEAD` roles.
 
 ---
 
@@ -63,7 +62,7 @@ Venture City is a live one-day multiplayer startup-economy simulation web app. 6
 ```bash
 npx tsc --noEmit     # TypeScript strict check (PASSED 0 errors)
 npx vitest run       # Unit test suite (PASSED 12/12)
-git status           # Clean working tree, pushed to origin/main
+git status           # Clean working tree, pushed commit 70e6233 to origin/main
 ```
 
 ---
@@ -71,4 +70,4 @@ git status           # Clean working tree, pushed to origin/main
 ## 6. Git State
 
 - **Repo**: https://github.com/Darmaster1/venture-city
-- **Branch**: `main` (up to date with `origin/main`)
+- **Branch**: `main` (pushed commit `70e6233`)
