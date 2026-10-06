@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Navbar, Footer, HeroOrbs } from "@/src/components/chrome";
 
@@ -16,10 +16,33 @@ export default function LoginPage() {
 }
 
 function Forms() {
-  const pre = useSearchParams().get("qr") ?? "";
+  const params = useSearchParams();
+  const pre = params.get("qr") ?? "";
+  const quick = params.get("t") ?? "";
   const [qr, setQr] = useState(pre);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  // Badge scans (?qr=) and GM quick links (?t=) sign straight in.
+  useEffect(() => {
+    if (quick) {
+      fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ impersonate: quick }) })
+        .then(async (r) => {
+          const j = await r.json();
+          if (r.ok) window.location.href = j.next;
+          else setMsg(j.error ?? "Sign in failed.");
+        })
+        .catch(() => setMsg("Couldn't reach the server."));
+    } else if (pre) {
+      fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ qrToken: pre.trim() }) })
+        .then(async (r) => {
+          const j = await r.json();
+          if (r.ok) window.location.href = j.next;
+          else setMsg(j.error ?? "Sign in failed. Paste the code below.");
+        })
+        .catch(() => setMsg("Couldn't reach the server."));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   async function login(e: React.FormEvent) {
     e.preventDefault();
     if (!qr.trim() || busy) return;

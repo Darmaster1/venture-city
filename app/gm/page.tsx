@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navbar, Footer, HeroOrbs } from "@/src/components/chrome";
 
 export default function GMPage() {
@@ -47,6 +47,18 @@ export default function GMPage() {
           <button className="btn" onClick={backup}>Backup journal</button>
         </div>
         <p aria-live="polite"><b>{msg}</b></p>
+        <div className="card" style={{ borderTop: "5px solid #B42318" }}>
+          <div className="label">Test runs · crew quick-check</div>
+          <CrewTable />
+        </div>
+        <div className="card" style={{ borderTop: "5px solid #0E7C9E" }}>
+          <div className="label">Test runs · participant spot-check</div>
+          <ParticipantChecks />
+        </div>
+        <div className="card" style={{ borderTop: "5px solid #7A271A" }}>
+          <div className="label">Danger zone · reset all game data</div>
+          <ResetPanel />
+        </div>
         <div className="grid-2">
           <div className="card" style={{ borderTop: "5px solid #6C3DF4" }}>
             <div className="label">Settlement step log</div>
@@ -69,6 +81,77 @@ export default function GMPage() {
         </div>
       </div>
       <Footer />
+    </div>
+  );
+}
+
+function CrewTable() {
+  const [crew, setCrew] = useState<Array<{ id: string; name: string; role: string; deskOrCompany: string | null }>>([]);
+  const [note, setNote] = useState("");
+  const load = () => fetch("/api/gm/volunteers").then((r) => r.json()).then((j) => setCrew(j.volunteers ?? [])).catch(() => null);
+  useEffect(() => { load(); }, []);
+  async function newSecret(id: string) {
+    const r = await fetch("/api/gm/volunteers/reset-secret", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
+    const j = await r.json();
+    setNote(r.ok ? `${j.name}: new secret (copy now) ${j.secret}` : (j.error ?? "Failed."));
+  }
+  async function checkAs(id: string) {
+    const r = await fetch("/api/gm/impersonate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
+    const j = await r.json();
+    if (r.ok) window.open(j.loginUrl, "_blank", "noopener");
+    else setNote(j.error ?? "Failed.");
+  }
+  return (
+    <div>
+      <p style={{ color: "var(--fg-muted)" }}>Sign-in-as opens that desk in a new tab for fast checking. Changing a secret shows it once — copy it to the volunteer.</p>
+      <table className="vc"><thead><tr><th>Name</th><th>Role</th><th>Desk</th><th>Check</th><th>Secret</th></tr></thead>
+        <tbody>{crew.map((v) => {
+          return (<tr key={v.id}><td>{v.name}</td><td>{v.role}</td><td>{v.deskOrCompany ?? "–"}</td>
+            <td><button className="btn" style={{ minHeight: 32 }} onClick={() => checkAs(v.id)}>Check desk</button></td>
+            <td><button className="btn" style={{ minHeight: 32 }} onClick={() => newSecret(v.id)}>Change secret</button></td></tr>);
+        })}</tbody>
+      </table>
+      <p className="mono" style={{ wordBreak: "break-all" }}>{note}</p>
+    </div>
+  );
+}
+
+function ParticipantChecks() {
+  const [parts, setParts] = useState<Array<{ id: string; name: string; badgeNo: string; companyId: string | null; loginUrl: string }>>([]);
+  useEffect(() => { fetch("/api/gm/participants").then((r) => r.json()).then((j) => setParts((j.participants ?? []).slice(0, 12))).catch(() => null); }, []);
+  return (
+    <div>
+      <p style={{ color: "var(--fg-muted)" }}>First 12 participants — open any login link in a new tab to check the portal as them. Full list with all links: <a href="/api/gm/participants">participants API</a>.</p>
+      <table className="vc"><thead><tr><th>Badge</th><th>Name</th><th>Company</th><th>Check</th></tr></thead>
+        <tbody>{parts.map((p) => <tr key={p.id}><td className="num">{p.badgeNo}</td><td>{p.name}</td><td>{p.companyId ?? "–"}</td><td><a className="btn" style={{ minHeight: 32 }} href={p.loginUrl} target="_blank" rel="noreferrer">Open portal</a></td></tr>)}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function ResetPanel() {
+  const [confirm, setConfirm] = useState("");
+  const [out, setOut] = useState("");
+  const [crew, setCrew] = useState<Array<{ id: string; name: string; secret: string | null }>>([]);
+  async function reset(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await fetch("/api/gm/reset", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm }) });
+    const j = await r.json();
+    if (r.ok) { setCrew(j.crew ?? []); setOut("Reset complete. Tick 0, fresh badges. gm-1 unchanged."); }
+    else setOut(j.error ?? "Failed.");
+    setConfirm("");
+  }
+  return (
+    <div>
+      <p style={{ color: "var(--fg-muted)" }}>Wipes journal, contracts, loans, players, missions — back to a fresh T0. <b>gm-1 keeps its password.</b> Every other volunteer gets a new secret (shown once below). Badge tokens change: reprint badges after reset.</p>
+      <form onSubmit={reset} style={{ display: "flex", gap: 8 }}>
+        <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder='Type RESET to confirm' style={{ maxWidth: 260 }} />
+        <button className="btn btn-danger" type="submit">Reset all data</button>
+      </form>
+      <p><b>{out}</b></p>
+      {crew.length > 0 && <table className="vc"><thead><tr><th>Name</th><th>ID</th><th>Secret</th></tr></thead>
+        <tbody>{crew.map((v) => <tr key={v.id}><td>{v.name}</td><td className="mono">{v.id}</td><td className="mono">{v.secret ?? "unchanged (gm-1)"}</td></tr>)}</tbody>
+      </table>}
     </div>
   );
 }

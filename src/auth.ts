@@ -30,6 +30,22 @@ export function newQrToken(): string {
   return randomBytes(32).toString("hex");
 }
 
+export async function signImpersonate(vid: string): Promise<string> {
+  return await new jose.SignJWT({ impersonate: vid })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("5m")
+    .sign(secret());
+}
+
+export async function verifyImpersonate(token: string): Promise<string | null> {
+  try {
+    const { payload } = await jose.jwtVerify(token, secret());
+    return typeof payload.impersonate === "string" ? payload.impersonate : null;
+  } catch {
+    return null;
+  }
+}
+
 export function csrfToken(): string {
   return randomBytes(16).toString("hex");
 }

@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 import { prisma } from "@/src/db";
-import { signSession, hashSecret, csrfToken } from "@/src/auth";
+import { signSession, hashSecret, csrfToken, verifyImpersonate } from "@/src/auth";
 
 async function checkRate(ip: string, route: string, limit: number): Promise<boolean> {
   // Postgres-backed token bucket (simplified): count audit rows in last minute
@@ -16,6 +16,18 @@ export async function POST(req: Request) {
   if (!(await checkRate(ip, "login", 5))) return Response.json({ error: "Too many logins. Wait a minute." }, { status: 429 });
   const body = await req.json().catch(() => ({}));
   const res = Response.json({ ok: true });
+  // GM-issued one-time login (test runs). Token is HMAC-signed, 5-min expiry.
+  if (body.impersonate) {
+    const vid = await verifyImpersonate(String(body.impersonate));
+    if (!vid) return Response.json({ error: "Login link expired. Ask the GM for a fresh one." }, { status: 401 });
+    const vv = await prisma.volunteer.findUnique({ where: { id: vid } });
+    if (!vv) return Response.json({ error: "Unknown volunteer." }, { status: 401 });
+    const jwt = await signSession({ kind: "volunteer", vid: vv.id, role: vv.role, desk: vv.deskOrCompany ?? undefined });
+    const next = vv.role === "GM" || vv.role === "DEPUTY_GM" || vv.role === "TECH_LEAD" ? "/gm" : vv.role === "OBSERVER" ? "/observer" : `/${(vv.deskOrCompany ?? "bank").toLowerCase()}`;
+    const r = Response.json({ ok: true, next });
+    r.headers.append("Set-Cookie", `vc_session=${jwt}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=43200`);
+    return r;
+  }
   // Participant QR login
   if (body.qrToken) {
     const p = await prisma.participant.findUnique({ where: { qrToken: String(body.qrToken) } });
